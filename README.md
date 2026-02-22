@@ -26,7 +26,7 @@
   - Desktop Agentを常駐実行するホストは Windows。
   - CDKデプロイやWebビルドは Linux / macOS / Windows いずれでも可。
 - ツール:
-  - Node.js `20.19.6`
+  - Node.js `22.14.0`
   - pnpm `9.15.4`
   - AWS CLI（認証済みプロファイル）
 - AWSアカウントに CDK デプロイ権限があること。

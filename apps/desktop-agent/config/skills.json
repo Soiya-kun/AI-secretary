@@ -38,6 +38,7 @@
         "devtask.submit executed"
       ],
       "timeoutSec": 60,
+      "openInNewWindow": true,
       "retryPolicy": {
         "maxAttempts": 3
       }

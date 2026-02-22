@@ -2,6 +2,7 @@ import { watch } from 'node:fs';
 import { loadSkillManifest } from './skill-manifest-loader.js';
 import { createRunner } from './skill-runners.js';
 import type { SkillExecutionResult, SkillManifest } from './skill-types.js';
+import { createWorkerOrchestrator } from './worker-orchestrator.js';
 
 export interface SkillRuntime {
   executeByCommandType: (input: {
@@ -28,6 +29,7 @@ function createUnsupportedSkill(commandType: string): SkillManifest {
 
 export function createSkillRuntime(manifestPath: string): SkillRuntime {
   let skillMap = new Map<string, SkillManifest>();
+  const workerOrchestrator = createWorkerOrchestrator();
 
   const load = (): void => {
     const manifest = loadSkillManifest(manifestPath);
@@ -72,12 +74,17 @@ export function createSkillRuntime(manifestPath: string): SkillRuntime {
       };
 
       for (let attempt = 1; attempt <= skill.retryPolicy.maxAttempts; attempt += 1) {
-        result = await runner.run({
-          skillName: skill.name,
-          command: skill.command,
-          args: skill.args,
-          timeoutSec: skill.timeoutSec,
+        const launchRequest = workerOrchestrator.createLaunchRequest({
+          skill,
           payload,
+        });
+        result = await runner.run({
+          skillName: launchRequest.skillName,
+          command: launchRequest.command,
+          args: launchRequest.args,
+          timeoutSec: launchRequest.timeoutSec,
+          openInNewWindow: launchRequest.openInNewWindow,
+          payload: launchRequest.payload,
         });
 
         if (result.status === 'succeeded') {

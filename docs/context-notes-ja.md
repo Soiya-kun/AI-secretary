@@ -47,3 +47,27 @@
 - 要件整理の結果、既存の完了TODOはアーカイブ化し、新規計画（Supervisor常駐化・workerプール化・remote経路実装完了）へ移行する。
 - OpenClaw類似の体験は、待機・受令・並列処理・監査の一連挙動を満たすことで段階的に達成する。
 
+## 7. 追加判断メモ（Supervisor運用）
+
+- `claude supervisor` は Desktop 側で単一常駐プロセスとして扱い、異常終了時は自動再起動で継続性を担保する。
+- 連続失敗時は通常タスク実行より可観測性を優先し、`agent.degraded` として監査ログへ記録する。
+
+## 8. 追加判断メモ（Worker並列制御）
+
+- Claude主軸方針に合わせ、worker起動要求は `supervisor=claude` を含む起動リクエストへ正規化する。
+- Codex/Gemini は Desktop 側で worker pool により同時実行上限を 2 に固定し、過負荷時はキュー待ちさせる。
+
+## 9. 追加判断メモ（運用導線）
+
+- 導入・障害復旧の情報分散を避けるため、CLI認証手順 / 疎通確認 / E2E確認 / 復旧手順は README に集約する。
+- 復旧手順は supervisor 系と worker 系で分離し、一次切り分け時間を短縮する方針とする。
+
+## 10. 追加判断メモ（受け入れテスト）
+
+- 新要件の受け入れは単一の巨大E2Eに寄せず、supervisor / pool / schema / hot reload / remote-flow を個別テストとして固定化する。
+- Mobile→Cloud→Desktop→worker は remote command polling を起点に Desktop runtime と skill 実行までを一連で確認する。
+
+## 11. 追加判断メモ（worker起動形態）
+
+- OS操作が必要なタスク向けに、skill manifest の `openInNewWindow` を true 指定した場合のみ独立ウィンドウ起動を許可する。
+- 通常タスクは既定で同一ウィンドウ実行とし、起動オーバーヘッド増加を抑制する。

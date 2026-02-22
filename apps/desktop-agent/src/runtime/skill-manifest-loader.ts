@@ -37,6 +37,17 @@ function requirePositiveInteger(record: Record<string, unknown>, key: string): n
   return value;
 }
 
+function parseOptionalBoolean(record: Record<string, unknown>, key: string): boolean | undefined {
+  const value = record[key];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== 'boolean') {
+    throw new Error(`Invalid manifest: ${key} must be a boolean`);
+  }
+  return value;
+}
+
 function parseRetryPolicy(skillRaw: Record<string, unknown>): { maxAttempts: number } {
   const retryPolicy = skillRaw.retryPolicy;
   if (!isRecord(retryPolicy)) {
@@ -66,6 +77,7 @@ function parseSkillManifest(skillRaw: unknown): SkillManifest {
     command: requireString(skillRaw, 'command'),
     args: requireStringArray(skillRaw, 'args'),
     timeoutSec: requirePositiveInteger(skillRaw, 'timeoutSec'),
+    openInNewWindow: parseOptionalBoolean(skillRaw, 'openInNewWindow'),
     retryPolicy: parseRetryPolicy(skillRaw),
   };
 }

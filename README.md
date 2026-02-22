@@ -88,8 +88,43 @@ pnpm --filter @ai-secretary/mobile-web build
    - `calendarEventsPath`
    - `googleCalendar.calendarId`
    - `googleCalendar.accessTokenEnvVar`
+   - `remoteCommand.enabled`
+   - `remoteCommand.baseUrl`
+   - `remoteCommand.pollIntervalMs`
+   - `remoteCommand.authTokenEnvVar`
+   - `supervisor.enabled`
+   - `supervisor.healthcheckIntervalMs`
+   - `supervisor.restartDelayMs`
+   - `supervisor.maxConsecutiveFailures`
 3. `googleCalendar.accessTokenEnvVar` で指定した環境変数（既定: `GOOGLE_CALENDAR_ACCESS_TOKEN`）へアクセストークンを設定する。
-4. 起動する。
+4. Worker CLI をインストールし、認証を完了する。
+
+```bash
+# Claude Code
+claude --version
+claude auth login
+
+# Codex CLI
+codex --version
+codex login
+
+# Gemini CLI
+gemini --version
+gemini auth login
+```
+
+5. `remoteCommand.authTokenEnvVar` で指定した環境変数に Command API 呼び出し用トークンを設定する。
+6. supervisor / worker 疎通確認を実施する。
+
+```bash
+# supervisor 単体確認
+claude supervisor --help
+
+# worker 単体確認
+codex --help
+gemini --help
+```
+7. 起動する。
 
 ```bash
 pnpm --filter @ai-secretary/desktop-agent build
@@ -103,7 +138,41 @@ node apps/desktop-agent/dist/main.js
 3. Desktop Agent の SQLite（`audit_logs`, `command_requests`, `git_exports`）に実行記録が残ることを確認する。
 4. `note.export` を失敗させた場合、`gitSyncFailureEmailTo` へメール通知が送信されることを確認する。
 
-## 7. ドキュメント
+### 6.1 Remote command E2E 疎通
+
+1. Desktop Agent 起動中に Command API へ `devtask.submit` を送信する。
+
+```bash
+curl -X POST "${COMMAND_API_URL}/v1/commands" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${COMMAND_API_TOKEN}" \
+  -d '{"commandType":"devtask.submit","payload":{"repository":"owner/repo","task":"Run E2E"}}'
+```
+
+2. 5秒以内に Desktop Agent 側で remote queue 取り込みが発生し、`audit_logs` に実行記録が追加されることを確認する。
+3. `GET /v1/commands/{id}` で `running` もしくは終端状態へ遷移していることを確認する。
+
+```bash
+curl -H "Authorization: Bearer ${COMMAND_API_TOKEN}" "${COMMAND_API_URL}/v1/commands/${COMMAND_ID}"
+```
+
+## 7. 障害復旧 Runbook（supervisor / worker）
+
+### 7.1 supervisor 復旧
+
+1. `agent.degraded` 監査ログが発生しているか確認する。
+2. `claude` コマンド自体の実行可否を確認する（PATH / 認証期限）。
+3. 認証期限切れの場合は `claude auth login` を再実施する。
+4. Desktop Agent を再起動し、60秒以内に supervisor が再起動して以後安定することを確認する。
+
+### 7.2 worker 復旧
+
+1. `codex --version` / `gemini --version` で CLI の生存確認を行う。
+2. `codex login` / `gemini auth login` を再実施し、トークン期限切れを解消する。
+3. 失敗した command を再送し、2並列制限内で `running` に遷移することを確認する。
+4. 連続失敗が継続する場合は worker CLI を再インストールして Desktop Agent を再起動する。
+
+## 8. ドキュメント
 
 ### 実装資料（実装エージェント向け）
 - アーキテクチャ仕様: `docs/ai-secretary-architecture-ja.md`

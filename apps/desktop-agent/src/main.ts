@@ -6,6 +6,8 @@ import { createNotesModule } from './notes/notes-module.js';
 import { createSkillRuntime } from './runtime/skill-runtime.js';
 import { createGoogleCalendarClient } from './meeting/google-calendar-client.js';
 import { createMeetingModule } from './meeting/meeting-module.js';
+import { createRemoteCommandClient } from './runtime/remote-command-client.js';
+import { createSupervisorManager } from './runtime/supervisor-manager.js';
 
 type GitSyncMode = 'direct' | 'pr' | 'hold';
 
@@ -222,6 +224,49 @@ async function bootstrap(): Promise<void> {
   });
 
   const tray = config.startInTray ? createTray(config.appName) : undefined;
+  const supervisorManager = config.supervisor?.enabled
+    ? createSupervisorManager(
+        {
+          command: 'claude',
+          args: ['supervisor'],
+          healthcheckIntervalMs: config.supervisor.healthcheckIntervalMs,
+          restartDelayMs: config.supervisor.restartDelayMs,
+          maxConsecutiveFailures: config.supervisor.maxConsecutiveFailures,
+        },
+        {
+          onDegraded: (reason) => {
+            // degraded details are recorded via skill/result and unique command_id.
+            void reason;
+            database.ensureAuditLogWritten({
+              commandId: `agent-degraded-${Date.now()}`,
+              skill: 'agent.degraded',
+              result: 'failed',
+              retryCount: 0,
+            });
+          },
+        },
+      )
+    : undefined;
+
+  supervisorManager?.start();
+
+  const remoteCommandClient =
+    config.remoteCommand?.enabled && config.remoteCommand.baseUrl
+      ? createRemoteCommandClient(
+          {
+            baseUrl: config.remoteCommand.baseUrl,
+            pollIntervalMs: config.remoteCommand.pollIntervalMs,
+            authToken: config.remoteCommand.authTokenEnvVar
+              ? process.env[config.remoteCommand.authTokenEnvVar]
+              : undefined,
+          },
+          {
+            enqueueRemote: (commandType, payload) => runtime.enqueueRemote(commandType, payload),
+          },
+        )
+      : undefined;
+
+  remoteCommandClient?.start();
 
   setInterval(() => {
     void runtime.processNext();
@@ -229,6 +274,8 @@ async function bootstrap(): Promise<void> {
 
   app.on('before-quit', () => {
     tray?.destroy();
+    supervisorManager?.stop();
+    remoteCommandClient?.stop();
     skillRuntime.close();
     runtime.shutdown();
   });

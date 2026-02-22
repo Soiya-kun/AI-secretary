@@ -21,6 +21,7 @@ test('loadSkillManifest validates extended schema fields', () => {
           command: 'echo',
           args: ['ok'],
           timeoutSec: 10,
+          openInNewWindow: true,
           retryPolicy: {
             maxAttempts: 3,
           },
@@ -32,7 +33,35 @@ test('loadSkillManifest validates extended schema fields', () => {
   const manifest = loadSkillManifest(path);
   assert.equal(manifest.skills[0]?.owner, 'dev-productivity');
   assert.equal(manifest.skills[0]?.timeoutSec, 10);
+  assert.equal(manifest.skills[0]?.openInNewWindow, true);
   assert.equal(manifest.skills[0]?.retryPolicy.maxAttempts, 3);
+});
+
+test('loadSkillManifest rejects non-boolean openInNewWindow', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'skill-manifest-invalid-'));
+  const path = resolve(dir, 'skills.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'devtask_submit',
+          owner: 'dev-productivity',
+          commandType: 'devtask.submit',
+          runner: 'codex',
+          command: 'echo',
+          args: ['ok'],
+          timeoutSec: 10,
+          openInNewWindow: 'true',
+          retryPolicy: {
+            maxAttempts: 3,
+          },
+        },
+      ],
+    }),
+  );
+
+  assert.throws(() => loadSkillManifest(path), /openInNewWindow must be a boolean/);
 });
 
 test('createSkillRuntime returns unsupported_command when commandType is unknown', async () => {
@@ -49,5 +78,91 @@ test('createSkillRuntime returns unsupported_command when commandType is unknown
   assert.equal(response.skill.name, 'unsupported_command');
   assert.equal(response.result.status, 'failed');
   assert.equal(response.result.exitCode, 1);
+  runtime.close();
+});
+
+test('createSkillRuntime keeps previous manifest when hot reload fails', async () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'skill-runtime-reload-'));
+  const path = resolve(dir, 'skills.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'note_capture',
+          owner: 'notes',
+          commandType: 'note.capture',
+          runner: 'claude',
+          command: 'echo',
+          args: ['ok'],
+          timeoutSec: 5,
+          retryPolicy: { maxAttempts: 1 },
+        },
+      ],
+    }),
+  );
+
+  const runtime = createSkillRuntime(path);
+  writeFileSync(path, '{ invalid json');
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  const response = await runtime.executeByCommandType({
+    commandType: 'note.capture',
+    payload: {},
+  });
+
+  assert.equal(response.skill.name, 'note_capture');
+  runtime.close();
+});
+
+test('createSkillRuntime applies hot reload without restart when manifest is updated', async () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'skill-runtime-hot-'));
+  const path = resolve(dir, 'skills.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'note_capture_v1',
+          owner: 'notes',
+          commandType: 'note.capture',
+          runner: 'claude',
+          command: 'echo',
+          args: ['v1'],
+          timeoutSec: 5,
+          retryPolicy: { maxAttempts: 1 },
+        },
+      ],
+    }),
+  );
+
+  const runtime = createSkillRuntime(path);
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'note_capture_v2',
+          owner: 'notes',
+          commandType: 'note.capture',
+          runner: 'claude',
+          command: 'echo',
+          args: ['v2'],
+          timeoutSec: 5,
+          retryPolicy: { maxAttempts: 1 },
+        },
+      ],
+    }),
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  const response = await runtime.executeByCommandType({
+    commandType: 'note.capture',
+    payload: {},
+  });
+
+  assert.equal(response.skill.name, 'note_capture_v2');
   runtime.close();
 });

@@ -13,6 +13,18 @@ export interface AgentConfig {
     calendarId: string;
     accessTokenEnvVar: string;
   };
+  remoteCommand?: {
+    enabled: boolean;
+    baseUrl: string;
+    pollIntervalMs: number;
+    authTokenEnvVar?: string;
+  };
+  supervisor?: {
+    enabled: boolean;
+    healthcheckIntervalMs: number;
+    restartDelayMs: number;
+    maxConsecutiveFailures: number;
+  };
 }
 
 const DEFAULT_CONFIG_PATH = './config/local.json';
@@ -40,5 +52,26 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
       calendarId: parsed.googleCalendar?.calendarId ?? 'primary',
       accessTokenEnvVar: parsed.googleCalendar?.accessTokenEnvVar ?? 'GOOGLE_CALENDAR_ACCESS_TOKEN',
     },
+    remoteCommand: parsed.remoteCommand
+      ? {
+          enabled: parsed.remoteCommand.enabled ?? false,
+          baseUrl: parsed.remoteCommand.baseUrl ?? '',
+          pollIntervalMs: parsed.remoteCommand.pollIntervalMs ?? 5_000,
+          authTokenEnvVar: parsed.remoteCommand.authTokenEnvVar,
+        }
+      : undefined,
+    supervisor: parsed.supervisor
+      ? {
+          enabled: parsed.supervisor.enabled ?? true,
+          healthcheckIntervalMs: parsed.supervisor.healthcheckIntervalMs ?? 60_000,
+          restartDelayMs: parsed.supervisor.restartDelayMs ?? 10_000,
+          maxConsecutiveFailures: parsed.supervisor.maxConsecutiveFailures ?? 3,
+        }
+      : {
+          enabled: true,
+          healthcheckIntervalMs: 60_000,
+          restartDelayMs: 10_000,
+          maxConsecutiveFailures: 3,
+        },
   };
 }

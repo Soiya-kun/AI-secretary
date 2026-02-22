@@ -71,3 +71,78 @@ test('joinScheduledMeeting retries join skill up to success', async () => {
 
   assert.equal(result.joinAttemptCount, 3);
 });
+
+test('shareScreenNow retries and succeeds for direct share_screen execution', async () => {
+  const calendarClient: CalendarClient = {
+    listEvents: async () => [],
+  };
+
+  let shareCallCount = 0;
+  const skillExecutor: MeetingSkillExecutor = {
+    execute: async ({ commandType }) => {
+      if (commandType === 'meeting.share_screen.start') {
+        shareCallCount += 1;
+        if (shareCallCount < 2) {
+          return { status: 'failed', output: 'screen not ready' };
+        }
+      }
+
+      return {
+        status: 'succeeded',
+        output: `${commandType} done`,
+      };
+    },
+  };
+
+  const module = createMeetingModule({ calendarClient, skillExecutor });
+  const result = await module.shareScreenNow({
+    eventId: 'event-3',
+    title: 'standup',
+    meetUrl: 'https://meet.google.com/abc-defg-hij',
+  });
+
+  assert.equal(result.attemptCount, 2);
+  assert.equal(result.output, 'meeting.share_screen.start done');
+});
+
+test('listUpcomingEvents only returns entries in 5min-before to 1min-after join window', async () => {
+  const nowMs = Date.UTC(2026, 0, 1, 10, 0, 0);
+  const calendarClient: CalendarClient = {
+    listEvents: async () => [
+      {
+        id: 'too-early',
+        startAtMs: nowMs - 5 * 60 * 1000 - 1,
+        endAtMs: nowMs + 3_600_000,
+        title: 'too early',
+      },
+      {
+        id: 'in-window',
+        startAtMs: nowMs + 1,
+        endAtMs: nowMs + 3_600_000,
+        title: 'in window',
+      },
+      {
+        id: 'too-late',
+        startAtMs: nowMs + 5 * 60 * 1000 + 1,
+        endAtMs: nowMs + 3_600_000,
+        title: 'too late',
+      },
+    ],
+  };
+
+  const module = createMeetingModule({
+    calendarClient,
+    skillExecutor: {
+      execute: async () => ({
+        status: 'succeeded',
+        output: 'ok',
+      }),
+    },
+  });
+
+  const events = await module.listUpcomingEvents(nowMs);
+  assert.deepEqual(
+    events.map((event) => event.id),
+    ['in-window'],
+  );
+});

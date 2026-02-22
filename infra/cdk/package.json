@@ -3,8 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo 'infra-cdk build placeholder'",
-    "typecheck": "echo 'infra-cdk typecheck placeholder'",
-    "lint": "echo 'infra-cdk lint placeholder'"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'infra-cdk lint not configured'",
+    "test": "node --test dist/src/lambda/command-api.test.js"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.183.0",
+    "constructs": "10.4.2",
+    "@aws-sdk/client-dynamodb": "3.840.0",
+    "@aws-sdk/lib-dynamodb": "3.840.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.147",
+    "@types/node": "22.10.10"
   }
 }

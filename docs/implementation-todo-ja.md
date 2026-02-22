@@ -83,16 +83,16 @@
 
 ## 7. AWS Control Plane（CDK）
 
-- [ ] CDK TypeScript プロジェクト初期化
-- [ ] Cognito User Pool / App Client を作成
-- [ ] API Gateway を作成
-- [ ] Lambda（command API）を作成
-- [ ] DynamoDB（commands/state）を作成
-- [ ] IAM最小権限ポリシーを設定
-- [ ] `POST /v1/commands` を実装
-- [ ] `GET /v1/commands/{id}` を実装
-- [ ] `POST /v1/commands/{id}/cancel` を実装
-- [ ] command_id単位の状態遷移を実装
+- [x] CDK TypeScript プロジェクト初期化
+- [x] Cognito User Pool / App Client を作成
+- [x] API Gateway を作成
+- [x] Lambda（command API）を作成
+- [x] DynamoDB（commands/state）を作成
+- [x] IAM最小権限ポリシーを設定
+- [x] `POST /v1/commands` を実装
+- [x] `GET /v1/commands/{id}` を実装
+- [x] `POST /v1/commands/{id}/cancel` を実装
+- [x] command_id単位の状態遷移を実装
 
 ## 8. Mobile Web UI
 

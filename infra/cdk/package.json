@@ -6,7 +6,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo 'infra-cdk lint not configured'",
-    "test": "node --test dist/src/lambda/command-api.test.js"
+    "test": "pnpm run build && node --test dist/src/lambda/command-api.test.js"
   },
   "dependencies": {
     "aws-cdk-lib": "2.183.0",

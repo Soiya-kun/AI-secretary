@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 export const NOTE_SECTION_TITLES = [
   '会議目的',
@@ -27,6 +28,12 @@ export interface NotesModule {
   generateMarkdown: (input: MeetingNoteInput) => string;
   saveUnknownRepoNote: (input: { markdown: string; fileName: string }) => string;
   ensureDevtaskDirectory: (repo: string) => string;
+  commitAndPushNote: (input: { repo: string; markdown: string; fileName: string }) => {
+    repo: string;
+    branch: string;
+    commitHash: string;
+    directory: string;
+  };
 }
 
 function normalizeRepo(repo: string): string {
@@ -36,6 +43,19 @@ function normalizeRepo(repo: string): string {
   }
 
   return normalized;
+}
+
+function runGitCommand(args: string[], cwd: string): string {
+  const result = spawnSync('git', args, {
+    cwd,
+    encoding: 'utf-8',
+  });
+
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || result.stdout.trim() || `git ${args.join(' ')} failed`);
+  }
+
+  return result.stdout.trim();
 }
 
 export function createNotesModule(notesRootPath: string): NotesModule {
@@ -71,10 +91,35 @@ export function createNotesModule(notesRootPath: string): NotesModule {
     return targetDir;
   };
 
+  const commitAndPushNote = (input: { repo: string; markdown: string; fileName: string }) => {
+    const normalizedRepo = normalizeRepo(input.repo);
+    const repoDir = ensureDevtaskDirectory(normalizedRepo);
+
+    const notePath = resolve(repoDir, `${input.fileName}.md`);
+    writeFileSync(notePath, input.markdown, 'utf-8');
+
+    runGitCommand(['add', notePath], repoDir);
+
+    const commitMessage = `docs: add meeting note ${input.fileName}`;
+    runGitCommand(['commit', '-m', commitMessage], repoDir);
+
+    const branch = runGitCommand(['rev-parse', '--abbrev-ref', 'HEAD'], repoDir);
+    runGitCommand(['push', 'origin', branch], repoDir);
+    const commitHash = runGitCommand(['rev-parse', 'HEAD'], repoDir);
+
+    return {
+      repo: normalizedRepo,
+      branch,
+      commitHash,
+      directory: repoDir,
+    };
+  };
+
   return {
     extractRepoFromText,
     generateMarkdown,
     saveUnknownRepoNote,
     ensureDevtaskDirectory,
+    commitAndPushNote,
   };
 }

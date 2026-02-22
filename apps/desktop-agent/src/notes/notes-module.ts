@@ -1,0 +1,80 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+export const NOTE_SECTION_TITLES = [
+  '会議目的',
+  '主要論点',
+  '決定事項',
+  'ToDo',
+  '懸念/リスク',
+  '保留事項',
+  '追加メモ',
+] as const;
+
+export type NoteSectionTitle = (typeof NOTE_SECTION_TITLES)[number];
+
+export interface NoteSectionInput {
+  title: NoteSectionTitle;
+  lines: string[];
+}
+
+export interface MeetingNoteInput {
+  sections: NoteSectionInput[];
+}
+
+export interface NotesModule {
+  extractRepoFromText: (input: string) => string | undefined;
+  generateMarkdown: (input: MeetingNoteInput) => string;
+  saveUnknownRepoNote: (input: { markdown: string; fileName: string }) => string;
+  ensureDevtaskDirectory: (repo: string) => string;
+}
+
+function normalizeRepo(repo: string): string {
+  const normalized = repo.trim().replace(/^repo:/, '');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(normalized)) {
+    throw new Error(`Invalid repo format: ${repo}`);
+  }
+
+  return normalized;
+}
+
+export function createNotesModule(notesRootPath: string): NotesModule {
+  const rootPath = resolve(notesRootPath);
+
+  const extractRepoFromText = (input: string): string | undefined => {
+    const matched = input.match(/repo:([\w.-]+\/[\w.-]+)/);
+    return matched ? matched[1] : undefined;
+  };
+
+  const generateMarkdown = (input: MeetingNoteInput): string => {
+    const sectionMap = new Map(input.sections.map((section) => [section.title, section.lines]));
+    return NOTE_SECTION_TITLES.map((title) => {
+      const lines = sectionMap.get(title) ?? ['未記入'];
+      const body = lines.length > 0 ? lines.map((line) => `- ${line}`).join('\n') : '- 未記入';
+      return `## ${title}\n${body}`;
+    }).join('\n\n');
+  };
+
+  const saveUnknownRepoNote = (input: { markdown: string; fileName: string }): string => {
+    const inboxDir = resolve(rootPath, 'notes/inbox-notes');
+    mkdirSync(inboxDir, { recursive: true });
+
+    const filePath = resolve(inboxDir, `${input.fileName}.md`);
+    writeFileSync(filePath, input.markdown, 'utf-8');
+    return filePath;
+  };
+
+  const ensureDevtaskDirectory = (repo: string): string => {
+    const normalizedRepo = normalizeRepo(repo);
+    const targetDir = resolve(rootPath, 'repos', normalizedRepo);
+    mkdirSync(targetDir, { recursive: true });
+    return targetDir;
+  };
+
+  return {
+    extractRepoFromText,
+    generateMarkdown,
+    saveUnknownRepoNote,
+    ensureDevtaskDirectory,
+  };
+}

@@ -71,11 +71,11 @@
 
 ## 6. Notes Module
 
-- [ ] 固定7セクションMarkdown生成を実装
-- [ ] `repo:<owner/name>` 判定の入力抽出を実装
+- [x] 固定7セクションMarkdown生成を実装
+- [x] `repo:<owner/name>` 判定の入力抽出を実装
 - [ ] repo判定skill実行を実装
-- [ ] 不明時 `notes/inbox-notes` 保存を実装
-- [ ] `devtask.submit` 対象ディレクトリ自動作成を実装
+- [x] 不明時 `notes/inbox-notes` 保存を実装
+- [x] `devtask.submit` 対象ディレクトリ自動作成を実装
 - [ ] Git add/commit/push 実行を実装
 - [ ] push方式（直push/PR/保留）のskill連携を実装
 - [ ] Git同期失敗時メール通知を実装

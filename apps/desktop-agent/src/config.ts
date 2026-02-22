@@ -9,6 +9,10 @@ export interface AgentConfig {
   startInTray: boolean;
   gitSyncFailureEmailTo: string;
   calendarEventsPath: string;
+  googleCalendar: {
+    calendarId: string;
+    accessTokenEnvVar: string;
+  };
 }
 
 const DEFAULT_CONFIG_PATH = './config/local.json';
@@ -32,5 +36,9 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
     startInTray: parsed.startInTray ?? false,
     gitSyncFailureEmailTo: parsed.gitSyncFailureEmailTo ?? 'ops@example.com',
     calendarEventsPath: parsed.calendarEventsPath ?? './apps/desktop-agent/config/calendar-events.json',
+    googleCalendar: {
+      calendarId: parsed.googleCalendar?.calendarId ?? 'primary',
+      accessTokenEnvVar: parsed.googleCalendar?.accessTokenEnvVar ?? 'GOOGLE_CALENDAR_ACCESS_TOKEN',
+    },
   };
 }

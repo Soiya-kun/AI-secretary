@@ -1,0 +1,4 @@
+{
+  "appName": "AI Secretary Desktop Agent",
+  "sqlitePath": "./apps/desktop-agent/data/agent.db"
+}

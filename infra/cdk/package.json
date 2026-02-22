@@ -1,0 +1,10 @@
+{
+  "name": "@ai-secretary/infra-cdk",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'infra-cdk build placeholder'",
+    "typecheck": "echo 'infra-cdk typecheck placeholder'",
+    "lint": "echo 'infra-cdk lint placeholder'"
+  }
+}

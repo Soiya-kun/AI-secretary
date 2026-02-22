@@ -31,6 +31,7 @@ export interface MeetingRunResult {
 export interface MeetingModule {
   listUpcomingEvents: (nowMs: number) => Promise<CalendarEvent[]>;
   extractMeetUrl: (event: CalendarEvent) => string | undefined;
+  shareScreenNow: (input: { eventId: string; title: string; meetUrl: string }) => Promise<{ attemptCount: number; output: string }>;
   joinScheduledMeeting: (nowMs: number) => Promise<MeetingRunResult>;
 }
 
@@ -120,7 +121,7 @@ export function createMeetingModule(input: {
       title: targetEvent.title,
     });
 
-    const share = await runSkillWithRetry(input.skillExecutor, 'meeting.share_screen.start', {
+    const share = await shareScreenNow({
       meetUrl,
       eventId: targetEvent.id,
       title: targetEvent.title,
@@ -136,9 +137,22 @@ export function createMeetingModule(input: {
     };
   };
 
+  const shareScreenNow = async (request: {
+    eventId: string;
+    title: string;
+    meetUrl: string;
+  }): Promise<{ attemptCount: number; output: string }> => {
+    return runSkillWithRetry(input.skillExecutor, 'meeting.share_screen.start', {
+      meetUrl: normalizeUrl(request.meetUrl),
+      eventId: request.eventId,
+      title: request.title,
+    });
+  };
+
   return {
     listUpcomingEvents,
     extractMeetUrl,
+    shareScreenNow,
     joinScheduledMeeting,
   };
 }

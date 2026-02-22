@@ -5,5 +5,9 @@
   "startInTray": true,
   "notesRootPath": "./apps/desktop-agent/data",
   "gitSyncFailureEmailTo": "ops@example.com",
-  "calendarEventsPath": "./apps/desktop-agent/config/calendar-events.json"
+  "calendarEventsPath": "./apps/desktop-agent/config/calendar-events.json",
+  "googleCalendar": {
+    "calendarId": "primary",
+    "accessTokenEnvVar": "GOOGLE_CALENDAR_ACCESS_TOKEN"
+  }
 }

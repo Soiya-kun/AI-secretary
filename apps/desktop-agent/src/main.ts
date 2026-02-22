@@ -44,7 +44,11 @@ async function bootstrap(): Promise<void> {
   const notesModule = createNotesModule(config.notesRootPath);
 
   const meetingModule = createMeetingModule({
-    calendarClient: createGoogleCalendarClient(config.calendarEventsPath),
+    calendarClient: createGoogleCalendarClient({
+      eventsFilePath: config.calendarEventsPath,
+      calendarId: config.googleCalendar.calendarId,
+      accessTokenEnvVar: config.googleCalendar.accessTokenEnvVar,
+    }),
     skillExecutor: {
       execute: async ({ commandType, payload }) => {
         const { result } = await skillRuntime.executeByCommandType({ commandType, payload });

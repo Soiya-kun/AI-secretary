@@ -49,7 +49,7 @@
 
 ## 4. Meeting Module
 
-- [ ] Google Calendar API 接続を実装
+- [x] Google Calendar API 接続を実装
 - [x] 会議イベント取得を実装
 - [x] Meet URL 抽出を実装
 - [x] `join_meet` skill 呼び出しを実装

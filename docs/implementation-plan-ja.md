@@ -101,3 +101,58 @@
 - 監査ログ欠損率 0%。
 - command API の認証なしアクセスは常時拒否。
 - raw音声一時保存データはTTL削除で5分超過を禁止。
+
+
+## 8. リリース・運用手順（確定）
+
+### 8.1 起動/停止/障害対応手順
+- Desktop Agent 起動手順:
+  1. `pnpm --filter @ai-secretary/desktop-agent build`
+  2. `node apps/desktop-agent/dist/main.js`
+- Desktop Agent 停止手順:
+  1. OSプロセスマネージャーで `main.js` プロセスを終了。
+- 障害一次対応:
+  1. `audit_logs` の最新 `status=failed` 行を確認。
+  2. 同一 `audit_id` で `command_requests` と `git_exports` を照合。
+  3. `retry_count < 3` の場合は同一コマンドを再投入。
+  4. `retry_count = 3` の場合は `note.export` を停止し `notes/inbox-notes` へ退避。
+
+### 8.2 secrets設定手順
+- 必須シークレット:
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `COGNITO_USER_POOL_ID`
+  - `COGNITO_CLIENT_ID`
+  - `API_BASE_URL`
+- 設定方法:
+  1. Desktop は `apps/desktop-agent/config/local.json` に非コミットで配置。
+  2. Mobile Web はデプロイ時に環境変数注入。
+  3. Lambda は CDK デプロイ時に環境変数設定。
+- 検証基準:
+  - secrets未設定時は起動時に即時エラーを返し、デフォルト値で継続しない。
+
+### 8.3 ログ保守手順
+- 監査ログ保守対象:
+  - SQLite `audit_logs`
+  - SQLite `command_requests`
+  - SQLite `git_exports`
+- 保守上限:
+  - `audit_logs` は 90日保持。
+  - 90日超過分は日次バッチで削除。
+- 障害時音声一時ファイル:
+  - 5分TTLで削除し、手動延長を禁止。
+
+### 8.4 バージョニング方針
+- 方式: Semantic Versioning（`MAJOR.MINOR.PATCH`）。
+- 判定:
+  - 破壊的変更: MAJOR を +1。
+  - 後方互換機能追加: MINOR を +1。
+  - バグ修正のみ: PATCH を +1。
+- タグ形式: `vX.Y.Z`。
+
+### 8.5 初回リリースタグ作成手順
+- 初回タグは `v0.1.0` とする。
+- 実施手順:
+  1. `pnpm -r test` を成功させる。
+  2. `git tag -a v0.1.0 -m "Initial release v0.1.0"`
+  3. `git push origin v0.1.0`

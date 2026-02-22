@@ -57,6 +57,31 @@ test('supervisor manager restarts crashed supervisor within restart delay', asyn
   manager.stop();
 });
 
+test('supervisor manager starts and keeps supervisor running within startup window', () => {
+  let created = 0;
+
+  const manager = createSupervisorManager(
+    {
+      command: 'claude',
+      args: ['supervisor'],
+      healthcheckIntervalMs: 60_000,
+      restartDelayMs: 10_000,
+      maxConsecutiveFailures: 3,
+    },
+    {
+      onDegraded: () => {},
+      createProcess: () => {
+        created += 1;
+        return new FakeSupervisorProcess();
+      },
+    },
+  );
+
+  manager.start();
+  assert.equal(created, 1);
+  manager.stop();
+});
+
 test('supervisor manager reports degraded after consecutive failures', async () => {
   const processes: FakeSupervisorProcess[] = [];
   const degraded: string[] = [];

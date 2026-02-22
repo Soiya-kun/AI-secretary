@@ -180,9 +180,9 @@
 - [x] 運用障害時の復旧Runbook（supervisor/worker別）を追加
 
 ### B7. 受け入れテスト（新要件）
-- [ ] supervisor 常駐起動テスト（60秒以内running）
-- [ ] supervisor 再起動テスト（10秒以内）
-- [ ] codex/gemini 各2並列上限テスト
-- [ ] commandType/payload schema 不一致拒否テスト
-- [ ] skill hot reload 無停止反映テスト
-- [ ] Mobile→Cloud→Desktop→worker 実行のE2Eテスト
+- [x] supervisor 常駐起動テスト（60秒以内running）
+- [x] supervisor 再起動テスト（10秒以内）
+- [x] codex/gemini 各2並列上限テスト
+- [x] commandType/payload schema 不一致拒否テスト
+- [x] skill hot reload 無停止反映テスト
+- [x] Mobile→Cloud→Desktop→worker 実行のE2Eテスト

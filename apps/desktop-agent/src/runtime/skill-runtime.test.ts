@@ -86,3 +86,54 @@ test('createSkillRuntime keeps previous manifest when hot reload fails', async (
   assert.equal(response.skill.name, 'note_capture');
   runtime.close();
 });
+
+test('createSkillRuntime applies hot reload without restart when manifest is updated', async () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'skill-runtime-hot-'));
+  const path = resolve(dir, 'skills.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'note_capture_v1',
+          owner: 'notes',
+          commandType: 'note.capture',
+          runner: 'claude',
+          command: 'echo',
+          args: ['v1'],
+          timeoutSec: 5,
+          retryPolicy: { maxAttempts: 1 },
+        },
+      ],
+    }),
+  );
+
+  const runtime = createSkillRuntime(path);
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'note_capture_v2',
+          owner: 'notes',
+          commandType: 'note.capture',
+          runner: 'claude',
+          command: 'echo',
+          args: ['v2'],
+          timeoutSec: 5,
+          retryPolicy: { maxAttempts: 1 },
+        },
+      ],
+    }),
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  const response = await runtime.executeByCommandType({
+    commandType: 'note.capture',
+    payload: {},
+  });
+
+  assert.equal(response.skill.name, 'note_capture_v2');
+  runtime.close();
+});

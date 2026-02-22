@@ -61,3 +61,8 @@
 
 - 導入・障害復旧の情報分散を避けるため、CLI認証手順 / 疎通確認 / E2E確認 / 復旧手順は README に集約する。
 - 復旧手順は supervisor 系と worker 系で分離し、一次切り分け時間を短縮する方針とする。
+
+## 10. 追加判断メモ（受け入れテスト）
+
+- 新要件の受け入れは単一の巨大E2Eに寄せず、supervisor / pool / schema / hot reload / remote-flow を個別テストとして固定化する。
+- Mobile→Cloud→Desktop→worker は remote command polling を起点に Desktop runtime と skill 実行までを一連で確認する。

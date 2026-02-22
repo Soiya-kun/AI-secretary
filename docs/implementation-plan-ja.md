@@ -156,3 +156,55 @@
   1. `pnpm -r test` を成功させる。
   2. `git tag -a v0.1.0 -m "Initial release v0.1.0"`
   3. `git push origin v0.1.0`
+
+### 8.6 セルフホスト運用手順の必須記載項目
+- 人手運用ドキュメント（README）には以下を必須記載する。
+  1. 前提ツール版本（Node `20.19.6`, pnpm `9.15.4`）。
+  2. AWSデプロイ手順（CDK build, bootstrap, deploy）。
+  3. Mobile Web の設定キー（`apiBaseUrl`, `cognitoDomain`, `cognitoClientId`, `cognitoRedirectUri`, `cognitoScope`）。
+  4. Desktop Agent の設定キー（`appName`, `sqlitePath`, `skillManifestPath`, `notesRootPath`, `gitSyncFailureEmailTo`, `calendarEventsPath`, `googleCalendar.*`）。
+  5. 最小疎通確認手順（Cognitoログイン、`devtask.submit` 状態遷移確認、SQLite監査ログ確認、Git同期失敗メール確認）。
+- 上記5項目が欠ける場合、セルフホスト手順は未完了と判定する。
+
+## 9. Claude Code主軸エージェント運用要件（追加確定）
+
+### 9.1 目的
+- 本システムは Claude Code を主軸エージェントとして常時稼働させる。
+- Codex CLI / Gemini CLI は Claude Code の指示で起動する実行ワーカーとして扱う。
+- システム全体は OpenClaw 類似の自律運用（待機・受令・並列実行・監査）を実現する。
+
+### 9.2 常時稼働要件
+- Desktop Agent は起動中に `claude supervisor` セッションを1つ維持する。
+- `claude supervisor` が異常終了した場合、10秒以内に再起動を試行する。
+- `claude supervisor` 再起動は連続3回まで行い、3回失敗時は `agent.degraded` を記録して通知する。
+
+### 9.3 複数CLIオーケストレーション要件
+- Claude Code は task ごとに `codex worker` / `gemini worker` の起動要求を発行できる。
+- Desktop Agent は worker 起動要求を受け、Windows上で独立プロセス（必要時は独立ウィンドウ）として起動する。
+- 同時実行上限は `codex <= 2`, `gemini <= 2` とする。
+- worker 実行結果（exit_code, stdout, stderr, artifact_path）を supervisor へ返却する。
+
+### 9.4 Skill運用要件
+- skill は運用開始後に追加・更新できる。
+- skill manifest 変更時は hot reload で反映し、Desktop Agent 再起動を不要とする。
+- すべての skill は `owner`, `commandType`, `runner`, `timeoutSec`, `retryPolicy` を必須フィールドとする。
+- 未定義 commandType を受信した場合は実行せず `unsupported_command` として監査ログへ保存する。
+
+### 9.5 リモート指示要件
+- スマホWeb UIから投入した command は 5秒以内に Desktop のローカルキューへ反映する。
+- commandType 名称は Cloud API / Mobile UI / Desktop Runtime で同一文字列を使用する。
+- command payload schema は commandType ごとに単一定義とし、`repo` / `repository` のような別名を禁止する。
+
+### 9.6 セットアップ要件
+- README に Claude/Codex/Gemini CLI のインストール手順、認証手順、疎通確認手順を必須記載する。
+- README に supervisor 起動確認、worker 起動確認、remote command 疎通確認を必須記載する。
+- 運用開始前に `pnpm -r test` と `agent smoke test` を成功させることをリリース条件とする。
+
+### 9.7 受け入れ基準（追加）
+1. Desktop 起動後60秒以内に `claude supervisor` が `running` になる。
+2. supervisor 異常終了時、10秒以内に再起動が実行される。
+3. Mobile から `devtask.submit` を送信すると、Claude 経由で worker が起動し、`running` へ遷移する。
+4. `codex` と `gemini` の各2並列を超える要求はキューイングされる。
+5. commandType / payload schema 不一致は実行されず監査ログに `validation_error` が残る。
+6. skill manifest 変更が再起動なしで反映される。
+

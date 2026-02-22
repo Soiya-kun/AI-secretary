@@ -120,3 +120,31 @@ Mobile Web UI
 - 全コマンドに監査IDを付与。
 - 実行者、時刻、skill名、結果、再試行回数を保存。
 - YOLOモードでも監査ログ省略は禁止。
+
+## 9. Claude主軸の自律エージェント構成（追加確定）
+
+### 9.1 実行モデル
+- Claude Code を supervisor とし、常時1セッションを維持する。
+- Codex CLI / Gemini CLI は supervisor が起動要求する worker として動作する。
+- Desktop Agent は supervisor / worker のプロセスライフサイクルを管理する。
+
+### 9.2 プロセス構成
+```text
+[Desktop Agent]
+  ├─ Supervisor Process (Claude Code) [always-on]
+  ├─ Worker Pool: Codex CLI (max 2)
+  ├─ Worker Pool: Gemini CLI (max 2)
+  ├─ Skill Registry (hot reload manifest)
+  ├─ Command Router (remote/local/scheduled)
+  └─ Audit Logger
+```
+
+### 9.3 ルーティング規則
+- 全 command は `commandType` をキーとして supervisor に渡す。
+- supervisor は skill 定義を参照して worker 起動計画を返す。
+- Agent は計画に従って worker を実行し、結果を supervisor へ返却する。
+
+### 9.4 整合制約
+- Cloud API / Mobile Web / Desktop Runtime の `commandType` は完全一致させる。
+- command payload は commandType単位で単一schemaを持ち、別名キーを禁止する。
+- 未定義 commandType は reject し、監査ログへ `unsupported_command` を保存する。

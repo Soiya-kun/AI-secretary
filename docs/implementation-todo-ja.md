@@ -8,6 +8,10 @@
 
 ---
 
+## A. アーカイブ（v1完了タスク）
+
+以下は従来計画の完了タスクを保存したアーカイブ。削除せず履歴として保持する。
+
 ## 0. リポジトリ初期化
 
 - [x] モノレポ構成 `/apps/desktop-agent` `/apps/mobile-web` `/infra/cdk` `/docs` を作成
@@ -131,3 +135,54 @@
 - [x] ログ保守手順を作成
 - [x] バージョニング方針を決定
 - [x] 初回リリースタグを作成
+
+
+---
+
+## B. 新規実装計画（Claude主軸エージェント化）
+
+### B1. Supervisor常駐化（Claude Code）
+- [ ] `claude supervisor` 常駐プロセス管理を実装
+- [ ] supervisor ヘルスチェック（1分周期）を実装
+- [ ] supervisor 異常終了時の10秒以内再起動を実装
+- [ ] 連続3回失敗時の `agent.degraded` 通知を実装
+
+### B2. Workerオーケストレーション（Codex/Gemini）
+- [ ] Claude指示による worker 起動プロトコルを実装
+- [ ] Codex worker プール（最大2並列）を実装
+- [ ] Gemini worker プール（最大2並列）を実装
+- [ ] worker 実行結果（exit_code/stdout/stderr/artifacts）標準化を実装
+- [ ] 必要時に独立ウィンドウで起動するオプションを実装
+
+### B3. Skill仕様強化
+- [ ] skill manifest schema に `owner`, `timeoutSec`, `retryPolicy` を追加
+- [ ] manifest schema バリデーションを強化
+- [ ] 未定義 commandType を `unsupported_command` として監査保存
+- [ ] hot reload 失敗時のロールバック挙動を実装
+
+### B4. Remote Command経路の実装完了
+- [ ] Desktop に command API ポーリング/購読クライアントを実装
+- [ ] Remote command をローカルキューへ5秒以内反映
+- [ ] Cloud/Mobile/Desktop の commandType 名称を統一
+- [ ] commandTypeごとの payload schema 検証を実装
+- [ ] `repo` / `repository` 等の別名禁止バリデーションを実装
+
+### B5. OpenClaw類似の自律運用機能
+- [ ] 待機状態からの自律タスク再開（resume）を実装
+- [ ] 複数タスクの優先度付き並列スケジューリングを実装
+- [ ] タスク間成果物受け渡し（artifact handoff）を実装
+- [ ] 長時間タスクの中間状態チェックポイントを実装
+
+### B6. セットアップ/運用導線整備
+- [ ] README に Claude/Codex/Gemini CLI の導入・認証手順を追加
+- [ ] README に supervisor/worker 疎通確認手順を追加
+- [ ] README に remote command E2E疎通手順を追加
+- [ ] 運用障害時の復旧Runbook（supervisor/worker別）を追加
+
+### B7. 受け入れテスト（新要件）
+- [ ] supervisor 常駐起動テスト（60秒以内running）
+- [ ] supervisor 再起動テスト（10秒以内）
+- [ ] codex/gemini 各2並列上限テスト
+- [ ] commandType/payload schema 不一致拒否テスト
+- [ ] skill hot reload 無停止反映テスト
+- [ ] Mobile→Cloud→Desktop→worker 実行のE2Eテスト

@@ -142,10 +142,10 @@
 ## B. 新規実装計画（Claude主軸エージェント化）
 
 ### B1. Supervisor常駐化（Claude Code）
-- [ ] `claude supervisor` 常駐プロセス管理を実装
-- [ ] supervisor ヘルスチェック（1分周期）を実装
-- [ ] supervisor 異常終了時の10秒以内再起動を実装
-- [ ] 連続3回失敗時の `agent.degraded` 通知を実装
+- [x] `claude supervisor` 常駐プロセス管理を実装
+- [x] supervisor ヘルスチェック（1分周期）を実装
+- [x] supervisor 異常終了時の10秒以内再起動を実装
+- [x] 連続3回失敗時の `agent.degraded` 通知を実装
 
 ### B2. Workerオーケストレーション（Codex/Gemini）
 - [ ] Claude指示による worker 起動プロトコルを実装
@@ -158,11 +158,11 @@
 - [x] skill manifest schema に `owner`, `timeoutSec`, `retryPolicy` を追加
 - [x] manifest schema バリデーションを強化
 - [x] 未定義 commandType を `unsupported_command` として監査保存
-- [ ] hot reload 失敗時のロールバック挙動を実装
+- [x] hot reload 失敗時のロールバック挙動を実装
 
 ### B4. Remote Command経路の実装完了
-- [ ] Desktop に command API ポーリング/購読クライアントを実装
-- [ ] Remote command をローカルキューへ5秒以内反映
+- [x] Desktop に command API ポーリング/購読クライアントを実装
+- [x] Remote command をローカルキューへ5秒以内反映
 - [x] Cloud/Mobile/Desktop の commandType 名称を統一
 - [x] commandTypeごとの payload schema 検証を実装
 - [x] `repo` / `repository` 等の別名禁止バリデーションを実装

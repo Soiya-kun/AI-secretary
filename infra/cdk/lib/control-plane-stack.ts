@@ -47,7 +47,7 @@ export class ControlPlaneStack extends cdk.Stack {
 
     commandApiHandler.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+        actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:Scan'],
         resources: [commandTable.tableArn, stateTable.tableArn]
       })
     );
@@ -66,6 +66,11 @@ export class ControlPlaneStack extends cdk.Stack {
     const commandLambdaIntegration = new apigateway.LambdaIntegration(commandApiHandler);
 
     commands.addMethod('POST', commandLambdaIntegration, {
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizer
+    });
+
+    commands.addMethod('GET', commandLambdaIntegration, {
       authorizationType: apigateway.AuthorizationType.COGNITO,
       authorizer
     });

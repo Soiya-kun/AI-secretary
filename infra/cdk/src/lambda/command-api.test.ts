@@ -97,3 +97,29 @@ test('handler rejects unauthenticated requests', async () => {
   assert.ok(response.headers);
   assert.ok(response.headers['x-audit-id']);
 });
+
+test('handler validates command list status query parameter', async () => {
+  process.env.COMMAND_TABLE_NAME = 'commands';
+  process.env.STATE_TABLE_NAME = 'state';
+
+  const response = await handler({
+    httpMethod: 'GET',
+    resource: '/v1/commands',
+    body: null,
+    headers: {},
+    queryStringParameters: { status: 'unknown' },
+    requestContext: {
+      authorizer: {
+        jwt: {
+          claims: {
+            sub: 'user-1',
+          },
+        },
+      },
+    },
+  } as never);
+
+  assert.equal(response.statusCode, 400);
+  const body = JSON.parse(response.body) as { message: string };
+  assert.equal(body.message, 'status is invalid');
+});

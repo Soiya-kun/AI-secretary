@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -207,6 +207,34 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
 
       return json(200, { command: result.Item, auditId }, auditId);
+    }
+
+    if (event.httpMethod === 'GET' && event.resource === '/v1/commands') {
+      const status = event.queryStringParameters?.status;
+      if (status && !['queued', 'running', 'succeeded', 'failed', 'cancelled'].includes(status)) {
+        return json(400, { message: 'status is invalid', auditId }, auditId);
+      }
+
+      const result = await ddb.send(
+        new ScanCommand({
+          TableName: commandTableName,
+          ...(status
+            ? {
+                FilterExpression: '#status = :status',
+                ExpressionAttributeNames: { '#status': 'status' },
+                ExpressionAttributeValues: {
+                  ':status': status,
+                },
+              }
+            : {}),
+          Limit: 50,
+        }),
+      );
+
+      const commands = (result.Items ?? []) as CommandRecord[];
+      commands.sort((left, right) => left.created_at.localeCompare(right.created_at));
+
+      return json(200, { commands, auditId }, auditId);
     }
 
     if (event.httpMethod === 'POST' && event.resource === '/v1/commands/{id}/cancel') {

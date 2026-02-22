@@ -50,13 +50,13 @@
 ## 4. Meeting Module
 
 - [ ] Google Calendar API 接続を実装
-- [ ] 会議イベント取得を実装
-- [ ] Meet URL 抽出を実装
-- [ ] `join_meet` skill 呼び出しを実装
-- [ ] `share_screen_meet` skill 呼び出しを実装
-- [ ] 参加成功判定を実装
-- [ ] 画面共有成功判定を実装
-- [ ] 失敗時リトライ連携を実装
+- [x] 会議イベント取得を実装
+- [x] Meet URL 抽出を実装
+- [x] `join_meet` skill 呼び出しを実装
+- [x] `share_screen_meet` skill 呼び出しを実装
+- [x] 参加成功判定を実装
+- [x] 画面共有成功判定を実装
+- [x] 失敗時リトライ連携を実装
 
 ## 5. Audio Module
 

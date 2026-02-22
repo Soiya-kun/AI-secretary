@@ -19,7 +19,7 @@
 ## 1. Desktop Agent 基盤
 
 - [x] Electron main プロセス起動を実装
-- [ ] 常駐（tray）起動オプションを実装
+- [x] 常駐（tray）起動オプションを実装
 - [x] ローカル設定ファイル読み込みを実装
 - [x] SQLite 初期化処理を実装
 - [x] `audit_logs` テーブル作成を実装

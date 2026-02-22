@@ -1,8 +1,25 @@
-import { app } from 'electron';
+import { app, Menu, Tray } from 'electron';
 import { loadAgentConfig } from './config.js';
 import { createAgentDatabase } from './db.js';
 import { createAgentRuntime } from './runtime/agent-runtime.js';
 import { createSkillRuntime } from './runtime/skill-runtime.js';
+
+function createTray(appName: string): Tray {
+  const tray = new Tray(process.execPath);
+  tray.setToolTip(appName);
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Quit',
+        click: () => {
+          app.quit();
+        },
+      },
+    ]),
+  );
+
+  return tray;
+}
 
 async function bootstrap(): Promise<void> {
   const config = loadAgentConfig();
@@ -35,11 +52,14 @@ async function bootstrap(): Promise<void> {
     payload: { appName: config.appName },
   });
 
+  const tray = config.startInTray ? createTray(config.appName) : undefined;
+
   setInterval(() => {
     void runtime.processNext();
   }, 1_000);
 
   app.on('before-quit', () => {
+    tray?.destroy();
     skillRuntime.close();
     runtime.shutdown();
   });

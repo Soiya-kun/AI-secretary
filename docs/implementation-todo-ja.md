@@ -10,21 +10,21 @@
 
 ## 0. リポジトリ初期化
 
-- [ ] モノレポ構成 `/apps/desktop-agent` `/apps/mobile-web` `/infra/cdk` `/docs` を作成
-- [ ] Node.js / pnpm / TypeScript のバージョン固定
-- [ ] ルート `package.json` に workspace 定義を追加
-- [ ] 共通 ESLint / Prettier / tsconfig を配置
-- [ ] `.env.example` を作成（desktop / mobile / aws）
+- [x] モノレポ構成 `/apps/desktop-agent` `/apps/mobile-web` `/infra/cdk` `/docs` を作成
+- [x] Node.js / pnpm / TypeScript のバージョン固定
+- [x] ルート `package.json` に workspace 定義を追加
+- [x] 共通 ESLint / Prettier / tsconfig を配置
+- [x] `.env.example` を作成（desktop / mobile / aws）
 
 ## 1. Desktop Agent 基盤
 
-- [ ] Electron main プロセス起動を実装
+- [x] Electron main プロセス起動を実装
 - [ ] 常駐（tray）起動オプションを実装
-- [ ] ローカル設定ファイル読み込みを実装
-- [ ] SQLite 初期化処理を実装
-- [ ] `audit_logs` テーブル作成を実装
-- [ ] `command_requests` テーブル作成を実装
-- [ ] `git_exports` テーブル作成を実装
+- [x] ローカル設定ファイル読み込みを実装
+- [x] SQLite 初期化処理を実装
+- [x] `audit_logs` テーブル作成を実装
+- [x] `command_requests` テーブル作成を実装
+- [x] `git_exports` テーブル作成を実装
 
 ## 2. Agent Runtime
 

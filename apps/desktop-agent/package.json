@@ -1,0 +1,20 @@
+{
+  "name": "@ai-secretary/desktop-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "11.8.1",
+    "electron": "35.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "@types/better-sqlite3": "7.6.11"
+  }
+}

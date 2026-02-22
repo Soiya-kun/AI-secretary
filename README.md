@@ -1,5 +1,21 @@
 # AI-secretary
 
+## モノレポ構成
+
+- `apps/desktop-agent`: Electron常駐エージェント（初期実装）
+- `apps/mobile-web`: Mobile Web UI（雛形）
+- `infra/cdk`: AWS CDK（雛形）
+- `docs`: 実装資料 / 文脈資料
+
+## セットアップ
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
 ## ドキュメント
 
 ### 実装資料（実装エージェント向け）

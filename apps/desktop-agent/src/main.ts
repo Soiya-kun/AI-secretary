@@ -4,6 +4,8 @@ import { createAgentDatabase } from './db.js';
 import { createAgentRuntime } from './runtime/agent-runtime.js';
 import { createNotesModule } from './notes/notes-module.js';
 import { createSkillRuntime } from './runtime/skill-runtime.js';
+import { createGoogleCalendarClient } from './meeting/google-calendar-client.js';
+import { createMeetingModule } from './meeting/meeting-module.js';
 
 type GitSyncMode = 'direct' | 'pr' | 'hold';
 
@@ -40,12 +42,60 @@ async function bootstrap(): Promise<void> {
 
   const skillRuntime = createSkillRuntime(config.skillManifestPath);
   const notesModule = createNotesModule(config.notesRootPath);
+
+  const meetingModule = createMeetingModule({
+    calendarClient: createGoogleCalendarClient(config.calendarEventsPath),
+    skillExecutor: {
+      execute: async ({ commandType, payload }) => {
+        const { result } = await skillRuntime.executeByCommandType({ commandType, payload });
+        return {
+          status: result.status,
+          output: result.output,
+        };
+      },
+    },
+  });
   const runtime = createAgentRuntime({
     execute: async ({ job, attempt }) => {
       if (job.commandType === 'devtask.submit') {
         const repo = typeof job.payload.repo === 'string' ? job.payload.repo : undefined;
         if (repo) {
           notesModule.ensureDevtaskDirectory(repo);
+        }
+      }
+
+
+      if (job.commandType === 'meeting.autojoin') {
+        try {
+          const meetingResult = await meetingModule.joinScheduledMeeting(Date.now());
+
+          database.insertAuditLog({
+            commandId: job.id,
+            skill: 'join_meet',
+            result: 'succeeded',
+            retryCount: meetingResult.joinAttemptCount,
+          });
+
+          database.insertAuditLog({
+            commandId: job.id,
+            skill: 'share_screen_meet',
+            result: 'succeeded',
+            retryCount: meetingResult.shareAttemptCount,
+          });
+
+          return { ok: true, message: meetingResult.output };
+        } catch (error) {
+          database.insertAuditLog({
+            commandId: job.id,
+            skill: 'meeting.autojoin',
+            result: 'failed',
+            retryCount: attempt,
+          });
+
+          return {
+            ok: false,
+            message: error instanceof Error ? error.message : String(error),
+          };
         }
       }
 
@@ -146,6 +196,14 @@ async function bootstrap(): Promise<void> {
     intervalMs: 60_000,
     commandType: 'note.healthcheck',
     payload: { appName: config.appName },
+  });
+
+
+  runtime.registerScheduledCommand({
+    name: 'meeting-autojoin',
+    intervalMs: 60_000,
+    commandType: 'meeting.autojoin',
+    payload: { source: 'google_calendar' },
   });
 
   const tray = config.startInTray ? createTray(config.appName) : undefined;

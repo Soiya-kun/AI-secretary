@@ -8,6 +8,7 @@ export interface AgentConfig {
   notesRootPath: string;
   startInTray: boolean;
   gitSyncFailureEmailTo: string;
+  calendarEventsPath: string;
 }
 
 const DEFAULT_CONFIG_PATH = './config/local.json';
@@ -30,5 +31,6 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
     notesRootPath: parsed.notesRootPath ?? './apps/desktop-agent/data',
     startInTray: parsed.startInTray ?? false,
     gitSyncFailureEmailTo: parsed.gitSyncFailureEmailTo ?? 'ops@example.com',
+    calendarEventsPath: parsed.calendarEventsPath ?? './apps/desktop-agent/config/calendar-events.json',
   };
 }

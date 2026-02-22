@@ -4,5 +4,6 @@
   "skillManifestPath": "./apps/desktop-agent/config/skills.json",
   "startInTray": true,
   "notesRootPath": "./apps/desktop-agent/data",
-  "gitSyncFailureEmailTo": "ops@example.com"
+  "gitSyncFailureEmailTo": "ops@example.com",
+  "calendarEventsPath": "./apps/desktop-agent/config/calendar-events.json"
 }

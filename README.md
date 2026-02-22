@@ -16,6 +16,9 @@
 - Mobile Web設定値（`window.__AI_SECRETARY_CONFIG__`）
 - Desktop Agent設定値（`apps/desktop-agent/config/local.json`）
 - 起動確認用の最小疎通テスト
+- Cognito Hosted UI ドメイン / テストユーザー準備手順
+- Desktop Agent 用 Bearer トークン払い出し手順
+- Electron プロセスとしての正しい起動手順
 
 ## 1. 前提条件
 
@@ -60,6 +63,50 @@ CDK Outputs から以下を取得し、Mobile Web/運用設定に使う。
 - `CommandApiUrl`
 - `UserPoolId`
 - `UserPoolClientId`
+
+### 3.4 Cognito Hosted UI ドメイン作成
+
+Mobile Web のログインに Cognito Hosted UI ドメインが必須。
+
+```bash
+aws cognito-idp create-user-pool-domain \
+  --user-pool-id <UserPoolId> \
+  --domain <UNIQUE_DOMAIN_PREFIX>
+```
+
+作成後、`https://<UNIQUE_DOMAIN_PREFIX>.auth.<AWS_REGION>.amazoncognito.com` を `cognitoDomain` に使う。
+
+### 3.5 初期オペレーターユーザー作成
+
+```bash
+aws cognito-idp admin-create-user \
+  --user-pool-id <UserPoolId> \
+  --username <OPERATOR_EMAIL> \
+  --user-attributes Name=email,Value=<OPERATOR_EMAIL> Name=email_verified,Value=true \
+  --temporary-password '<TEMP_PASSWORD>'
+
+aws cognito-idp admin-set-user-password \
+  --user-pool-id <UserPoolId> \
+  --username <OPERATOR_EMAIL> \
+  --password '<STRONG_PASSWORD>' \
+  --permanent
+```
+
+### 3.6 User Pool Client の OAuth 設定更新
+
+本リポジトリのCDK定義だけでは Hosted UI 用の callback/logout URL が未設定のため、デプロイ後に User Pool Client 設定を更新する。
+
+```bash
+aws cognito-idp update-user-pool-client \
+  --user-pool-id <UserPoolId> \
+  --client-id <UserPoolClientId> \
+  --allowed-o-auth-flows-user-pool-client \
+  --allowed-o-auth-flows implicit \
+  --allowed-o-auth-scopes openid email profile \
+  --callback-urls 'https://<MOBILE_WEB_HOST>' \
+  --logout-urls 'https://<MOBILE_WEB_HOST>' \
+  --supported-identity-providers COGNITO
+```
 
 ## 4. Mobile Web の配備
 
@@ -114,6 +161,19 @@ gemini auth login
 ```
 
 5. `remoteCommand.authTokenEnvVar` で指定した環境変数に Command API 呼び出し用トークンを設定する。
+
+```bash
+# 例: USER_PASSWORD_AUTH で AccessToken を取得して環境変数へ設定
+export COMMAND_API_TOKEN=$(aws cognito-idp initiate-auth \
+  --auth-flow USER_PASSWORD_AUTH \
+  --client-id <UserPoolClientId> \
+  --auth-parameters USERNAME=<OPERATOR_EMAIL>,PASSWORD='<STRONG_PASSWORD>' \
+  --query 'AuthenticationResult.AccessToken' \
+  --output text)
+```
+
+`remoteCommand.authTokenEnvVar` が `COMMAND_API_TOKEN` の場合、Desktop Agent は上記値を Bearer トークンとして使用する。
+AccessToken は有効期限があるため、運用時は定期更新（または自動更新ジョブ）を必須とする。
 6. supervisor / worker 疎通確認を実施する。
 
 ```bash
@@ -128,7 +188,13 @@ gemini --help
 
 ```bash
 pnpm --filter @ai-secretary/desktop-agent build
-node apps/desktop-agent/dist/main.js
+pnpm --filter @ai-secretary/desktop-agent exec electron apps/desktop-agent/dist/main.js
+```
+
+`local.json` をリポジトリルート以外に置く場合は、起動前に `DESKTOP_CONFIG_PATH` を設定する。
+
+```bash
+export DESKTOP_CONFIG_PATH='C:/path/to/local.json'
 ```
 
 ## 6. 最小疎通確認（運用前チェック）
@@ -190,3 +256,11 @@ curl -H "Authorization: Bearer ${COMMAND_API_TOKEN}" "${COMMAND_API_URL}/v1/comm
 - 実装資料は「何を実装するか」のみ記述。
 - 文脈資料は「なぜそうなったか」のみ記述。
 - 詳細ルールは `AGENTS.md` を参照。
+
+
+## 9. 追加の機能監査メモ（2026-02）
+
+現行実装のコード監査で、運用影響がある不足を1件修正済み。
+
+- `devtask.submit` の payload 正式キーは `repository` だが、Desktop Agent 側のディレクトリ自動作成処理が `repo` のみ参照していた。
+- 本修正で `repository` を優先し、後方互換として `repo` も受理する。

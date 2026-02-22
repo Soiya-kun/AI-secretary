@@ -14,6 +14,13 @@ export interface AgentDatabase {
   connection: Database.Database;
   initialize: () => void;
   insertAuditLog: (input: AuditLogInput) => void;
+  ensureAuditLogWritten: (input: AuditLogInput) => void;
+  calculateAuditLogCoverage: (commandIds: string[]) => {
+    totalCommands: number;
+    loggedCommands: number;
+    missingCommands: string[];
+    missingRate: number;
+  };
   insertGitExport: (input: {
     commandId: string;
     repo: string;
@@ -31,6 +38,21 @@ function ensureDirectory(sqlitePath: string): string {
 
 export function createAgentDatabase(sqlitePath: string): AgentDatabase {
   const db = new Database(ensureDirectory(sqlitePath));
+
+  const runInsertAuditLog = (input: AuditLogInput): void => {
+    const statement = db.prepare(`
+      INSERT INTO audit_logs (audit_id, command_id, skill, result, retry_count)
+      VALUES (@auditId, @commandId, @skill, @result, @retryCount)
+    `);
+
+    statement.run({
+      auditId: randomUUID(),
+      commandId: input.commandId,
+      skill: input.skill,
+      result: input.result,
+      retryCount: input.retryCount,
+    });
+  };
 
   return {
     connection: db,
@@ -68,18 +90,46 @@ export function createAgentDatabase(sqlitePath: string): AgentDatabase {
       `);
     },
     insertAuditLog: (input) => {
-      const statement = db.prepare(`
-        INSERT INTO audit_logs (audit_id, command_id, skill, result, retry_count)
-        VALUES (@auditId, @commandId, @skill, @result, @retryCount)
-      `);
+      runInsertAuditLog(input);
+    },
+    ensureAuditLogWritten: (input) => {
+      try {
+        runInsertAuditLog(input);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`Audit log write failed for command ${input.commandId}: ${reason}`);
+      }
+    },
+    calculateAuditLogCoverage: (commandIds) => {
+      const uniqCommandIds = [...new Set(commandIds)];
+      if (uniqCommandIds.length === 0) {
+        return {
+          totalCommands: 0,
+          loggedCommands: 0,
+          missingCommands: [],
+          missingRate: 0,
+        };
+      }
 
-      statement.run({
-        auditId: randomUUID(),
-        commandId: input.commandId,
-        skill: input.skill,
-        result: input.result,
-        retryCount: input.retryCount,
-      });
+      const rows = db
+        .prepare(
+          `
+            SELECT DISTINCT command_id AS commandId
+            FROM audit_logs
+            WHERE command_id IS NOT NULL
+          `,
+        )
+        .all() as Array<{ commandId: string }>;
+
+      const loggedCommandIds = new Set(rows.map((row) => row.commandId));
+      const missingCommands = uniqCommandIds.filter((commandId) => !loggedCommandIds.has(commandId));
+
+      return {
+        totalCommands: uniqCommandIds.length,
+        loggedCommands: uniqCommandIds.length - missingCommands.length,
+        missingCommands,
+        missingRate: missingCommands.length / uniqCommandIds.length,
+      };
     },
     insertGitExport: (input) => {
       const statement = db.prepare(`

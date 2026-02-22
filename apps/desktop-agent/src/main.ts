@@ -61,6 +61,17 @@ async function bootstrap(): Promise<void> {
   });
   const runtime = createAgentRuntime({
     execute: async ({ job, attempt }) => {
+      let auditLogWritten = false;
+      const writeAuditLog = (input: { skill: string; result: 'succeeded' | 'failed'; retryCount: number }): void => {
+        database.ensureAuditLogWritten({
+          commandId: job.id,
+          skill: input.skill,
+          result: input.result,
+          retryCount: input.retryCount,
+        });
+        auditLogWritten = true;
+      };
+
       if (job.commandType === 'devtask.submit') {
         const repo = typeof job.payload.repo === 'string' ? job.payload.repo : undefined;
         if (repo) {
@@ -73,15 +84,13 @@ async function bootstrap(): Promise<void> {
         try {
           const meetingResult = await meetingModule.joinScheduledMeeting(Date.now());
 
-          database.insertAuditLog({
-            commandId: job.id,
+          writeAuditLog({
             skill: 'join_meet',
             result: 'succeeded',
             retryCount: meetingResult.joinAttemptCount,
           });
 
-          database.insertAuditLog({
-            commandId: job.id,
+          writeAuditLog({
             skill: 'share_screen_meet',
             result: 'succeeded',
             retryCount: meetingResult.shareAttemptCount,
@@ -89,8 +98,7 @@ async function bootstrap(): Promise<void> {
 
           return { ok: true, message: meetingResult.output };
         } catch (error) {
-          database.insertAuditLog({
-            commandId: job.id,
+          writeAuditLog({
             skill: 'meeting.autojoin',
             result: 'failed',
             retryCount: attempt,
@@ -184,12 +192,15 @@ async function bootstrap(): Promise<void> {
         payload: job.payload,
       });
 
-      database.insertAuditLog({
-        commandId: job.id,
+      writeAuditLog({
         skill: skill.name,
         result: result.status,
         retryCount: attempt,
       });
+
+      if (!auditLogWritten) {
+        throw new Error(`Audit log must be written for command ${job.id}`);
+      }
 
       return { ok: result.status === 'succeeded', message: result.output };
     },

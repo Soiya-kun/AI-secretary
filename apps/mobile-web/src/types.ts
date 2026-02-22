@@ -1,6 +1,6 @@
 export type CommandType =
-  | 'join_meet'
-  | 'share_screen_meet'
+  | 'meeting.join.now'
+  | 'meeting.share_screen.start'
   | 'note.capture'
   | 'note.export'
   | 'devtask.submit';

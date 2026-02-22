@@ -151,21 +151,21 @@
 - [ ] Claude指示による worker 起動プロトコルを実装
 - [ ] Codex worker プール（最大2並列）を実装
 - [ ] Gemini worker プール（最大2並列）を実装
-- [ ] worker 実行結果（exit_code/stdout/stderr/artifacts）標準化を実装
+- [x] worker 実行結果（exit_code/stdout/stderr/artifacts）標準化を実装
 - [ ] 必要時に独立ウィンドウで起動するオプションを実装
 
 ### B3. Skill仕様強化
-- [ ] skill manifest schema に `owner`, `timeoutSec`, `retryPolicy` を追加
-- [ ] manifest schema バリデーションを強化
-- [ ] 未定義 commandType を `unsupported_command` として監査保存
+- [x] skill manifest schema に `owner`, `timeoutSec`, `retryPolicy` を追加
+- [x] manifest schema バリデーションを強化
+- [x] 未定義 commandType を `unsupported_command` として監査保存
 - [ ] hot reload 失敗時のロールバック挙動を実装
 
 ### B4. Remote Command経路の実装完了
 - [ ] Desktop に command API ポーリング/購読クライアントを実装
 - [ ] Remote command をローカルキューへ5秒以内反映
-- [ ] Cloud/Mobile/Desktop の commandType 名称を統一
-- [ ] commandTypeごとの payload schema 検証を実装
-- [ ] `repo` / `repository` 等の別名禁止バリデーションを実装
+- [x] Cloud/Mobile/Desktop の commandType 名称を統一
+- [x] commandTypeごとの payload schema 検証を実装
+- [x] `repo` / `repository` 等の別名禁止バリデーションを実装
 
 ### B5. OpenClaw類似の自律運用機能
 - [ ] 待機状態からの自律タスク再開（resume）を実装

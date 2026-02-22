@@ -28,6 +28,26 @@ function requireStringArray(record: Record<string, unknown>, key: string): strin
   return value;
 }
 
+function requirePositiveInteger(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw new Error(`Invalid manifest: ${key} must be a positive integer`);
+  }
+
+  return value;
+}
+
+function parseRetryPolicy(skillRaw: Record<string, unknown>): { maxAttempts: number } {
+  const retryPolicy = skillRaw.retryPolicy;
+  if (!isRecord(retryPolicy)) {
+    throw new Error('Invalid manifest: retryPolicy must be an object');
+  }
+
+  return {
+    maxAttempts: requirePositiveInteger(retryPolicy, 'maxAttempts'),
+  };
+}
+
 function parseSkillManifest(skillRaw: unknown): SkillManifest {
   if (!isRecord(skillRaw)) {
     throw new Error('Invalid manifest: each skill must be an object');
@@ -40,10 +60,13 @@ function parseSkillManifest(skillRaw: unknown): SkillManifest {
 
   return {
     name: requireString(skillRaw, 'name'),
+    owner: requireString(skillRaw, 'owner'),
     commandType: requireString(skillRaw, 'commandType'),
     runner: runner as SkillRunnerType,
     command: requireString(skillRaw, 'command'),
     args: requireStringArray(skillRaw, 'args'),
+    timeoutSec: requirePositiveInteger(skillRaw, 'timeoutSec'),
+    retryPolicy: parseRetryPolicy(skillRaw),
   };
 }
 

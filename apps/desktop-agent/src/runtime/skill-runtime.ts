@@ -11,6 +11,21 @@ export interface SkillRuntime {
   close: () => void;
 }
 
+function createUnsupportedSkill(commandType: string): SkillManifest {
+  return {
+    name: 'unsupported_command',
+    owner: 'system',
+    commandType,
+    runner: 'claude',
+    command: 'echo',
+    args: [`No skill found for ${commandType}`],
+    timeoutSec: 1,
+    retryPolicy: {
+      maxAttempts: 1,
+    },
+  };
+}
+
 export function createSkillRuntime(manifestPath: string): SkillRuntime {
   let skillMap = new Map<string, SkillManifest>();
 
@@ -34,15 +49,12 @@ export function createSkillRuntime(manifestPath: string): SkillRuntime {
       const skill = skillMap.get(commandType);
       if (!skill) {
         return {
-          skill: {
-            name: 'missing_skill',
-            commandType,
-            runner: 'claude',
-            command: 'echo',
-            args: [`No skill found for ${commandType}`],
-          },
+          skill: createUnsupportedSkill(commandType),
           result: {
             status: 'failed',
+            exitCode: 1,
+            stdout: '',
+            stderr: `No skill found for ${commandType}`,
             output: `No skill found for ${commandType}`,
             artifacts: [],
           },
@@ -50,12 +62,28 @@ export function createSkillRuntime(manifestPath: string): SkillRuntime {
       }
 
       const runner = createRunner(skill.runner);
-      const result = await runner.run({
-        skillName: skill.name,
-        command: skill.command,
-        args: skill.args,
-        payload,
-      });
+      let result: SkillExecutionResult = {
+        status: 'failed',
+        exitCode: 1,
+        stdout: '',
+        stderr: 'skill execution was not started',
+        output: 'skill execution was not started',
+        artifacts: [],
+      };
+
+      for (let attempt = 1; attempt <= skill.retryPolicy.maxAttempts; attempt += 1) {
+        result = await runner.run({
+          skillName: skill.name,
+          command: skill.command,
+          args: skill.args,
+          timeoutSec: skill.timeoutSec,
+          payload,
+        });
+
+        if (result.status === 'succeeded') {
+          break;
+        }
+      }
 
       return { skill, result };
     },

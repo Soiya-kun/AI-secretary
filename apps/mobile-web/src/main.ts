@@ -24,15 +24,15 @@ appElement.innerHTML = `
       <form id="commandForm">
         <label>Command Type
           <select id="commandType" required>
-            <option value="join_meet">join_meet</option>
-            <option value="share_screen_meet">share_screen_meet</option>
+            <option value="meeting.join.now">meeting.join.now</option>
+            <option value="meeting.share_screen.start">meeting.share_screen.start</option>
             <option value="note.capture">note.capture</option>
             <option value="note.export">note.export</option>
             <option value="devtask.submit">devtask.submit</option>
           </select>
         </label>
         <label>Payload(JSON)
-          <textarea id="payloadInput" rows="6">{"title":"Weekly sync"}</textarea>
+          <textarea id="payloadInput" rows="6">{"url":"https://meet.google.com/example","source":"calendar","content":"weekly memo","repo":"owner/repo"}</textarea>
         </label>
         <fieldset id="devtaskFieldset">
           <legend>devtask.submit専用</legend>

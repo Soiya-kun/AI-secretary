@@ -38,14 +38,14 @@
 
 ## 3. Skill Runtime
 
-- [ ] skill manifest ローダを実装
-- [ ] manifest バリデーションを実装
-- [ ] skill hot reload を実装
-- [ ] Claude Code orchestrator 呼び出しを実装
-- [ ] Codex CLI runner を実装
-- [ ] Gemini CLI runner を実装
-- [ ] 実行結果（status/artifacts）正規化を実装
-- [ ] skill実行ログを `audit_logs` に保存
+- [x] skill manifest ローダを実装
+- [x] manifest バリデーションを実装
+- [x] skill hot reload を実装
+- [x] Claude Code orchestrator 呼び出しを実装
+- [x] Codex CLI runner を実装
+- [x] Gemini CLI runner を実装
+- [x] 実行結果（status/artifacts）正規化を実装
+- [x] skill実行ログを `audit_logs` に保存
 
 ## 4. Meeting Module
 

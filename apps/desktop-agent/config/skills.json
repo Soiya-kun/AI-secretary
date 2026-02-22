@@ -1,0 +1,32 @@
+{
+  "skills": [
+    {
+      "name": "join_meet",
+      "commandType": "meeting.join.now",
+      "runner": "claude",
+      "command": "echo",
+      "args": ["join_meet executed"]
+    },
+    {
+      "name": "share_screen_meet",
+      "commandType": "meeting.share_screen.start",
+      "runner": "claude",
+      "command": "echo",
+      "args": ["share_screen_meet executed"]
+    },
+    {
+      "name": "devtask_submit",
+      "commandType": "devtask.submit",
+      "runner": "codex",
+      "command": "echo",
+      "args": ["devtask.submit executed"]
+    },
+    {
+      "name": "assistant_ask",
+      "commandType": "assistant.ask",
+      "runner": "gemini",
+      "command": "echo",
+      "args": ["assistant.ask executed"]
+    }
+  ]
+}

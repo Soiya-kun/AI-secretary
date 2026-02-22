@@ -13,6 +13,7 @@ test('createLaunchRequest converts skill into claude-supervised worker request',
       command: 'codex',
       args: ['run', '--json'],
       timeoutSec: 180,
+      openInNewWindow: true,
       retryPolicy: { maxAttempts: 2 },
     },
     payload: { repository: 'owner/repo', task: 'add tests' },
@@ -23,5 +24,6 @@ test('createLaunchRequest converts skill into claude-supervised worker request',
   assert.equal(request.skillName, 'devtask_submit');
   assert.equal(request.commandType, 'devtask.submit');
   assert.equal(request.timeoutSec, 180);
+  assert.equal(request.openInNewWindow, true);
   assert.deepEqual(request.payload, { repository: 'owner/repo', task: 'add tests' });
 });

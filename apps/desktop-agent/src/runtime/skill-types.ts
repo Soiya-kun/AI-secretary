@@ -8,6 +8,7 @@ export interface SkillManifest {
   command: string;
   args: string[];
   timeoutSec: number;
+  openInNewWindow?: boolean;
   retryPolicy: {
     maxAttempts: number;
   };
@@ -18,6 +19,7 @@ export interface SkillExecutionInput {
   command: string;
   args: string[];
   timeoutSec: number;
+  openInNewWindow?: boolean;
   payload: Record<string, unknown>;
 }
 

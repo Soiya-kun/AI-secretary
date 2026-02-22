@@ -1,9 +1,24 @@
 import { spawn } from 'node:child_process';
 import type { SkillExecutionInput, SkillExecutionResult, SkillRunnerType } from './skill-types.js';
 
-async function runCommand(command: string, args: string[], timeoutSec: number): Promise<SkillExecutionResult> {
+async function runCommand(
+  command: string,
+  args: string[],
+  timeoutSec: number,
+  openInNewWindow?: boolean,
+): Promise<SkillExecutionResult> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const stdio: ['ignore', 'pipe', 'pipe'] = ['ignore', 'pipe', 'pipe'];
+    const spawnOptions: Parameters<typeof spawn>[2] = openInNewWindow
+      ? {
+          stdio,
+          detached: process.platform === 'win32',
+          windowsHide: false,
+          shell: process.platform === 'win32',
+        }
+      : { stdio };
+
+    const child = spawn(command, args, spawnOptions);
     let stdout = '';
     let stderr = '';
 
@@ -11,15 +26,15 @@ async function runCommand(command: string, args: string[], timeoutSec: number): 
       child.kill('SIGTERM');
     }, timeoutSec * 1_000);
 
-    child.stdout.on('data', (chunk) => {
+    child.stdout?.on('data', (chunk: Buffer) => {
       stdout += chunk.toString();
     });
 
-    child.stderr.on('data', (chunk) => {
+    child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString();
     });
 
-    child.on('error', (error) => {
+    child.on('error', (error: Error) => {
       clearTimeout(timeoutHandle);
       resolve({
         status: 'failed',
@@ -31,7 +46,7 @@ async function runCommand(command: string, args: string[], timeoutSec: number): 
       });
     });
 
-    child.on('close', (code) => {
+    child.on('close', (code: number | null) => {
       clearTimeout(timeoutHandle);
       const trimmedStdout = stdout.trim();
       const trimmedStderr = stderr.trim();
@@ -100,7 +115,9 @@ class CliSkillRunner implements SkillRunner {
 
   async run(input: SkillExecutionInput): Promise<SkillExecutionResult> {
     const pool = workerPools[this.runnerType];
-    return pool.run(() => runCommand(input.command, input.args, input.timeoutSec));
+    return pool.run(() =>
+      runCommand(input.command, input.args, input.timeoutSec, input.openInNewWindow),
+    );
   }
 }
 

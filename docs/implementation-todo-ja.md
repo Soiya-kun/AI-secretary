@@ -152,7 +152,7 @@
 - [x] Codex worker プール（最大2並列）を実装
 - [x] Gemini worker プール（最大2並列）を実装
 - [x] worker 実行結果（exit_code/stdout/stderr/artifacts）標準化を実装
-- [ ] 必要時に独立ウィンドウで起動するオプションを実装
+- [x] 必要時に独立ウィンドウで起動するオプションを実装
 
 ### B3. Skill仕様強化
 - [x] skill manifest schema に `owner`, `timeoutSec`, `retryPolicy` を追加

@@ -83,6 +83,7 @@ export function createSkillRuntime(manifestPath: string): SkillRuntime {
           command: launchRequest.command,
           args: launchRequest.args,
           timeoutSec: launchRequest.timeoutSec,
+          openInNewWindow: launchRequest.openInNewWindow,
           payload: launchRequest.payload,
         });
 

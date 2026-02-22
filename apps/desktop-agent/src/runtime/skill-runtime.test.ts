@@ -21,6 +21,7 @@ test('loadSkillManifest validates extended schema fields', () => {
           command: 'echo',
           args: ['ok'],
           timeoutSec: 10,
+          openInNewWindow: true,
           retryPolicy: {
             maxAttempts: 3,
           },
@@ -32,7 +33,35 @@ test('loadSkillManifest validates extended schema fields', () => {
   const manifest = loadSkillManifest(path);
   assert.equal(manifest.skills[0]?.owner, 'dev-productivity');
   assert.equal(manifest.skills[0]?.timeoutSec, 10);
+  assert.equal(manifest.skills[0]?.openInNewWindow, true);
   assert.equal(manifest.skills[0]?.retryPolicy.maxAttempts, 3);
+});
+
+test('loadSkillManifest rejects non-boolean openInNewWindow', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'skill-manifest-invalid-'));
+  const path = resolve(dir, 'skills.json');
+  writeFileSync(
+    path,
+    JSON.stringify({
+      skills: [
+        {
+          name: 'devtask_submit',
+          owner: 'dev-productivity',
+          commandType: 'devtask.submit',
+          runner: 'codex',
+          command: 'echo',
+          args: ['ok'],
+          timeoutSec: 10,
+          openInNewWindow: 'true',
+          retryPolicy: {
+            maxAttempts: 3,
+          },
+        },
+      ],
+    }),
+  );
+
+  assert.throws(() => loadSkillManifest(path), /openInNewWindow must be a boolean/);
 });
 
 test('createSkillRuntime returns unsupported_command when commandType is unknown', async () => {

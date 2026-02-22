@@ -66,3 +66,8 @@
 
 - 新要件の受け入れは単一の巨大E2Eに寄せず、supervisor / pool / schema / hot reload / remote-flow を個別テストとして固定化する。
 - Mobile→Cloud→Desktop→worker は remote command polling を起点に Desktop runtime と skill 実行までを一連で確認する。
+
+## 11. 追加判断メモ（worker起動形態）
+
+- OS操作が必要なタスク向けに、skill manifest の `openInNewWindow` を true 指定した場合のみ独立ウィンドウ起動を許可する。
+- 通常タスクは既定で同一ウィンドウ実行とし、起動オーバーヘッド増加を抑制する。

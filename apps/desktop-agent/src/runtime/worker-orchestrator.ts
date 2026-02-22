@@ -9,6 +9,7 @@ export interface WorkerLaunchRequest {
   args: string[];
   payload: Record<string, unknown>;
   timeoutSec: number;
+  openInNewWindow?: boolean;
 }
 
 export interface WorkerOrchestrator {
@@ -29,6 +30,7 @@ export function createWorkerOrchestrator(): WorkerOrchestrator {
       args: skill.args,
       payload,
       timeoutSec: skill.timeoutSec,
+      openInNewWindow: skill.openInNewWindow,
     }),
   };
 }

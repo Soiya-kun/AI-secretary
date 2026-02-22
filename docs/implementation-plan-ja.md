@@ -181,6 +181,7 @@
 ### 9.3 複数CLIオーケストレーション要件
 - Claude Code は task ごとに `codex worker` / `gemini worker` の起動要求を発行できる。
 - Desktop Agent は worker 起動要求を受け、Windows上で独立プロセス（必要時は独立ウィンドウ）として起動する。
+- 独立ウィンドウ起動は skill manifest の `openInNewWindow=true` 指定時のみ許可する。
 - 同時実行上限は `codex <= 2`, `gemini <= 2` とする。
 - worker 実行結果（exit_code, stdout, stderr, artifact_path）を supervisor へ返却する。
 
@@ -188,6 +189,7 @@
 - skill は運用開始後に追加・更新できる。
 - skill manifest 変更時は hot reload で反映し、Desktop Agent 再起動を不要とする。
 - すべての skill は `owner`, `commandType`, `runner`, `timeoutSec`, `retryPolicy` を必須フィールドとする。
+- `openInNewWindow` は任意フィールド（boolean）とし、true の場合のみ独立ウィンドウ起動を有効化する。
 - 未定義 commandType を受信した場合は実行せず `unsupported_command` として監査ログへ保存する。
 
 ### 9.5 リモート指示要件
@@ -207,4 +209,3 @@
 4. `codex` と `gemini` の各2並列を超える要求はキューイングされる。
 5. commandType / payload schema 不一致は実行されず監査ログに `validation_error` が残る。
 6. skill manifest 変更が再起動なしで反映される。
-

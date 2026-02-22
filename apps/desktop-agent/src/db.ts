@@ -14,6 +14,13 @@ export interface AgentDatabase {
   connection: Database.Database;
   initialize: () => void;
   insertAuditLog: (input: AuditLogInput) => void;
+  insertGitExport: (input: {
+    commandId: string;
+    repo: string;
+    branch: string;
+    commitHash?: string;
+    exportStatus: 'succeeded' | 'failed';
+  }) => void;
 }
 
 function ensureDirectory(sqlitePath: string): string {
@@ -72,6 +79,20 @@ export function createAgentDatabase(sqlitePath: string): AgentDatabase {
         skill: input.skill,
         result: input.result,
         retryCount: input.retryCount,
+      });
+    },
+    insertGitExport: (input) => {
+      const statement = db.prepare(`
+        INSERT INTO git_exports (command_id, repo, branch, commit_hash, export_status)
+        VALUES (@commandId, @repo, @branch, @commitHash, @exportStatus)
+      `);
+
+      statement.run({
+        commandId: input.commandId,
+        repo: input.repo,
+        branch: input.branch,
+        commitHash: input.commitHash ?? null,
+        exportStatus: input.exportStatus,
       });
     },
   };

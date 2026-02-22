@@ -41,19 +41,43 @@ async function bootstrap(): Promise<void> {
       if (job.commandType === 'note.capture') {
         const content = typeof job.payload.content === 'string' ? job.payload.content : '';
         const repo = notesModule.extractRepoFromText(content);
+        const markdown = notesModule.generateMarkdown({
+          sections: [
+            {
+              title: '追加メモ',
+              lines: [content || '入力なし'],
+            },
+          ],
+        });
+
         if (!repo) {
-          const markdown = notesModule.generateMarkdown({
-            sections: [
-              {
-                title: '追加メモ',
-                lines: [content || '入力なし'],
-              },
-            ],
-          });
           notesModule.saveUnknownRepoNote({
             markdown,
             fileName: `note-${job.id}`,
           });
+        } else {
+          try {
+            const exportResult = notesModule.commitAndPushNote({
+              repo,
+              markdown,
+              fileName: `note-${job.id}`,
+            });
+
+            database.insertGitExport({
+              commandId: job.id,
+              repo: exportResult.repo,
+              branch: exportResult.branch,
+              commitHash: exportResult.commitHash,
+              exportStatus: 'succeeded',
+            });
+          } catch {
+            database.insertGitExport({
+              commandId: job.id,
+              repo,
+              branch: 'unknown',
+              exportStatus: 'failed',
+            });
+          }
         }
       }
 

@@ -75,9 +75,14 @@ async function bootstrap(): Promise<void> {
       };
 
       if (job.commandType === 'devtask.submit') {
-        const repo = typeof job.payload.repo === 'string' ? job.payload.repo : undefined;
-        if (repo) {
-          notesModule.ensureDevtaskDirectory(repo);
+        const repository =
+          typeof job.payload.repository === 'string'
+            ? job.payload.repository
+            : typeof job.payload.repo === 'string'
+              ? job.payload.repo
+              : undefined;
+        if (repository) {
+          notesModule.ensureDevtaskDirectory(repository);
         }
       }
 

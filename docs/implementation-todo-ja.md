@@ -73,7 +73,7 @@
 
 - [x] 固定7セクションMarkdown生成を実装
 - [x] `repo:<owner/name>` 判定の入力抽出を実装
-- [ ] repo判定skill実行を実装
+- [x] repo判定skill実行を実装
 - [x] 不明時 `notes/inbox-notes` 保存を実装
 - [x] `devtask.submit` 対象ディレクトリ自動作成を実装
 - [x] Git add/commit/push 実行を実装

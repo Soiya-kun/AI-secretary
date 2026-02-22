@@ -44,6 +44,15 @@
       "args": [
         "note.capture executed"
       ]
+    },
+    {
+      "name": "note_repo_detect",
+      "commandType": "note.repo.detect",
+      "runner": "claude",
+      "command": "echo",
+      "args": [
+        "repo:unknown/unknown"
+      ]
     }
   ]
 }

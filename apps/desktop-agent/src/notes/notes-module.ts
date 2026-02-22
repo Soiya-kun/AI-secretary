@@ -25,6 +25,7 @@ export interface MeetingNoteInput {
 
 export interface NotesModule {
   extractRepoFromText: (input: string) => string | undefined;
+  extractRepoFromSkillOutput: (input: string) => string | undefined;
   generateMarkdown: (input: MeetingNoteInput) => string;
   saveUnknownRepoNote: (input: { markdown: string; fileName: string }) => string;
   ensureDevtaskDirectory: (repo: string) => string;
@@ -71,6 +72,16 @@ export function createNotesModule(notesRootPath: string): NotesModule {
   const extractRepoFromText = (input: string): string | undefined => {
     const matched = input.match(/repo:([\w.-]+\/[\w.-]+)/);
     return matched ? matched[1] : undefined;
+  };
+
+  const extractRepoFromSkillOutput = (input: string): string | undefined => {
+    const explicitRepoMatch = input.match(/(?:^|\s)repo:([\w.-]+\/[\w.-]+)(?:\s|$)/);
+    if (explicitRepoMatch) {
+      return explicitRepoMatch[1];
+    }
+
+    const rawRepoMatch = input.match(/(?:^|\s)([\w.-]+\/[\w.-]+)(?:\s|$)/);
+    return rawRepoMatch ? rawRepoMatch[1] : undefined;
   };
 
   const generateMarkdown = (input: MeetingNoteInput): string => {
@@ -164,6 +175,7 @@ export function createNotesModule(notesRootPath: string): NotesModule {
 
   return {
     extractRepoFromText,
+    extractRepoFromSkillOutput,
     generateMarkdown,
     saveUnknownRepoNote,
     ensureDevtaskDirectory,

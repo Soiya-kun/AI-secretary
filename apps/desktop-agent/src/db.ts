@@ -1,10 +1,19 @@
+import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import Database from 'better-sqlite3';
 
+export interface AuditLogInput {
+  commandId: string;
+  skill: string;
+  result: 'succeeded' | 'failed';
+  retryCount: number;
+}
+
 export interface AgentDatabase {
   connection: Database.Database;
   initialize: () => void;
+  insertAuditLog: (input: AuditLogInput) => void;
 }
 
 function ensureDirectory(sqlitePath: string): string {
@@ -50,6 +59,20 @@ export function createAgentDatabase(sqlitePath: string): AgentDatabase {
           exported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
       `);
+    },
+    insertAuditLog: (input) => {
+      const statement = db.prepare(`
+        INSERT INTO audit_logs (audit_id, command_id, skill, result, retry_count)
+        VALUES (@auditId, @commandId, @skill, @result, @retryCount)
+      `);
+
+      statement.run({
+        auditId: randomUUID(),
+        commandId: input.commandId,
+        skill: input.skill,
+        result: input.result,
+        retryCount: input.retryCount,
+      });
     },
   };
 }

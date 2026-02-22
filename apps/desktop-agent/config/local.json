@@ -2,5 +2,6 @@
   "appName": "AI Secretary Desktop Agent",
   "sqlitePath": "./apps/desktop-agent/data/agent.db",
   "skillManifestPath": "./apps/desktop-agent/config/skills.json",
-  "startInTray": true
+  "startInTray": true,
+  "notesRootPath": "./apps/desktop-agent/data"
 }

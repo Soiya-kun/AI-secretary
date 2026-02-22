@@ -5,6 +5,7 @@ export interface AgentConfig {
   sqlitePath: string;
   appName: string;
   skillManifestPath: string;
+  notesRootPath: string;
   startInTray: boolean;
 }
 
@@ -25,6 +26,7 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
     sqlitePath: parsed.sqlitePath,
     appName: parsed.appName,
     skillManifestPath: parsed.skillManifestPath,
+    notesRootPath: parsed.notesRootPath ?? './apps/desktop-agent/data',
     startInTray: parsed.startInTray ?? false,
   };
 }

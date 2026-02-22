@@ -51,7 +51,6 @@ async function bootstrap(): Promise<void> {
 
       if (job.commandType === 'note.capture') {
         const content = typeof job.payload.content === 'string' ? job.payload.content : '';
-        const repo = notesModule.extractRepoFromText(content);
         const markdown = notesModule.generateMarkdown({
           sections: [
             {
@@ -60,6 +59,21 @@ async function bootstrap(): Promise<void> {
             },
           ],
         });
+
+        let repo = notesModule.extractRepoFromText(content);
+
+        if (!repo) {
+          const repoDetection = await skillRuntime.executeByCommandType({
+            commandType: 'note.repo.detect',
+            payload: {
+              content,
+            },
+          });
+
+          if (repoDetection.result.status === 'succeeded') {
+            repo = notesModule.extractRepoFromSkillOutput(repoDetection.result.output);
+          }
+        }
 
         if (!repo) {
           notesModule.saveUnknownRepoNote({

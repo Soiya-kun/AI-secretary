@@ -25,6 +25,33 @@ test('validateCreateCommand rejects missing commandType', () => {
   );
 });
 
+
+test('validateCreateCommand rejects unsupported commandType', () => {
+  assert.throws(
+    () =>
+      validateCreateCommand(
+        JSON.stringify({
+          commandType: 'assistant.ask',
+          payload: { title: 'x' }
+        })
+      ),
+    /commandType is unsupported/
+  );
+});
+
+test('validateCreateCommand rejects non-object payload', () => {
+  assert.throws(
+    () =>
+      validateCreateCommand(
+        JSON.stringify({
+          commandType: 'devtask.submit',
+          payload: ['invalid']
+        })
+      ),
+    /payload is required/
+  );
+});
+
 test('handler rejects unauthenticated requests', async () => {
   process.env.COMMAND_TABLE_NAME = 'commands';
   process.env.STATE_TABLE_NAME = 'state';

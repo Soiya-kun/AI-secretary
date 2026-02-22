@@ -12,6 +12,17 @@ type CreateCommandRequest = {
   payload: Record<string, unknown>;
 };
 
+const allowedCommandTypes = new Set([
+  'join_meet',
+  'share_screen_meet',
+  'note.capture',
+  'note.export',
+  'devtask.submit'
+]);
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 type CommandRecord = {
   command_id: string;
   command_type: string;
@@ -56,7 +67,10 @@ export const validateCreateCommand = (body: string | null): CreateCommandRequest
   if (!parsed.commandType || typeof parsed.commandType !== 'string') {
     throw new Error('commandType is required');
   }
-  if (!parsed.payload || typeof parsed.payload !== 'object') {
+  if (!allowedCommandTypes.has(parsed.commandType)) {
+    throw new Error('commandType is unsupported');
+  }
+  if (!isPlainObject(parsed.payload)) {
     throw new Error('payload is required');
   }
 
@@ -183,7 +197,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return json(409, { message: 'command cannot transition to cancelled', auditId }, auditId);
     }
 
-    if (message.includes('Unexpected token') || message.includes('is required')) {
+    if (
+      message.includes('Unexpected token') ||
+      message.includes('is required') ||
+      message.includes('is unsupported')
+    ) {
       return json(400, { message, auditId }, auditId);
     }
 

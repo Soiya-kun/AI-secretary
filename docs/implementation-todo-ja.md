@@ -120,8 +120,8 @@
 - [ ] 20秒無音で会話継続モード終了テスト
 - [x] 会議終了後Markdown出力 + Git反映テスト
 - [x] repo不明時 inbox-notes 退避テスト
-- [ ] `devtask.submit` 実行と状態確認テスト
-- [ ] Git同期失敗時メール通知テスト
+- [x] `devtask.submit` 実行と状態確認テスト
+- [x] Git同期失敗時メール通知テスト
 - [x] raw音声5分TTL削除テスト
 
 ## 11. リリース準備

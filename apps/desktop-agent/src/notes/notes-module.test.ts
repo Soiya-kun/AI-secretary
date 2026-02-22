@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -74,5 +74,69 @@ test('syncNoteToGit commits and pushes for direct mode', () => {
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
     rmSync(remoteDir, { recursive: true, force: true });
+  }
+});
+
+test('syncNoteToGit returns pending status for pr mode with commit hash', () => {
+  const tempRoot = mkdtempSync(resolve(tmpdir(), 'ai-secretary-pr-'));
+
+  try {
+    const workingRepo = resolve(tempRoot, 'repos', 'owner/repo');
+    const notesModule = createNotesModule(tempRoot);
+
+    notesModule.ensureDevtaskDirectory('owner/repo');
+    git(workingRepo, 'init');
+    git(workingRepo, 'config', 'user.email', 'bot@example.com');
+    git(workingRepo, 'config', 'user.name', 'ai-secretary-bot');
+    git(workingRepo, 'checkout', '-b', 'feature/devtask-submit');
+
+    const result = notesModule.syncNoteToGit({
+      repo: 'owner/repo',
+      markdown: '## ToDo\n- devtask.submit を実行する',
+      fileName: '2026-01-16-devtask-submit',
+      mode: 'pr',
+    });
+
+    assert.equal(result.status, 'pending');
+    assert.equal(result.branch, 'feature/devtask-submit');
+    assert.ok(result.commitHash);
+    const head = git(workingRepo, 'rev-parse', 'HEAD');
+    assert.equal(result.commitHash, head);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('sendGitSyncFailureEmail throws when sendmail exits non-zero', () => {
+  const tempRoot = mkdtempSync(resolve(tmpdir(), 'ai-secretary-sendmail-fail-'));
+
+  try {
+    const binDir = resolve(tempRoot, 'bin');
+    const sendmailScript = resolve(binDir, 'sendmail');
+    const notesModule = createNotesModule(tempRoot);
+
+    execFileSync('mkdir', ['-p', binDir]);
+    writeFileSync(sendmailScript, '#!/usr/bin/env bash\necho "simulated failure" 1>&2\nexit 1\n', 'utf-8');
+    chmodSync(sendmailScript, 0o755);
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${binDir}:${originalPath ?? ''}`;
+
+    try {
+      assert.throws(
+        () => {
+          notesModule.sendGitSyncFailureEmail({
+            to: 'ops@example.com',
+            subject: 'Git sync failed',
+            body: 'push failed',
+          });
+        },
+        /simulated failure/
+      );
+    } finally {
+      process.env.PATH = originalPath;
+    }
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
   }
 });

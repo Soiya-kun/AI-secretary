@@ -40,7 +40,11 @@ importers:
         specifier: 22.13.10
         version: 22.13.10
 
-  apps/mobile-web: {}
+  apps/mobile-web:
+    devDependencies:
+      '@types/node':
+        specifier: 22.13.10
+        version: 22.13.10
 
   infra/cdk:
     dependencies:

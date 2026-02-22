@@ -118,8 +118,8 @@
 - [ ] share_screen_meet 単体実行テスト
 - [ ] 呼びかけ後2秒以内の一次応答テスト
 - [ ] 20秒無音で会話継続モード終了テスト
-- [ ] 会議終了後Markdown出力 + Git反映テスト
-- [ ] repo不明時 inbox-notes 退避テスト
+- [x] 会議終了後Markdown出力 + Git反映テスト
+- [x] repo不明時 inbox-notes 退避テスト
 - [ ] `devtask.submit` 実行と状態確認テスト
 - [ ] Git同期失敗時メール通知テスト
 - [x] raw音声5分TTL削除テスト

@@ -159,7 +159,7 @@
 
 ### 8.6 セルフホスト運用手順の必須記載項目
 - 人手運用ドキュメント（README）には以下を必須記載する。
-  1. 前提ツール版本（Node `20.19.6`, pnpm `9.15.4`）。
+  1. 前提ツール版本（Node `22.14.0`, pnpm `9.15.4`）。
   2. AWSデプロイ手順（CDK build, bootstrap, deploy）。
   3. Mobile Web の設定キー（`apiBaseUrl`, `cognitoDomain`, `cognitoClientId`, `cognitoRedirectUri`, `cognitoScope`）。
   4. Desktop Agent の設定キー（`appName`, `sqlitePath`, `skillManifestPath`, `notesRootPath`, `gitSyncFailureEmailTo`, `calendarEventsPath`, `googleCalendar.*`）。

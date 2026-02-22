@@ -146,3 +146,43 @@ test('listUpcomingEvents only returns entries in 5min-before to 1min-after join 
     ['in-window'],
   );
 });
+
+test('joinScheduledMeeting succeeds at both join-window boundaries', async () => {
+  const eventStartMs = Date.UTC(2026, 0, 1, 10, 0, 0);
+  const calendarClient: CalendarClient = {
+    listEvents: async () => [
+      {
+        id: 'edge-window-event',
+        startAtMs: eventStartMs,
+        endAtMs: eventStartMs + 3_600_000,
+        title: 'boundary test meeting',
+        hangoutLink: 'https://meet.google.com/edge-case-ok',
+      },
+    ],
+  };
+
+  const calls: string[] = [];
+  const skillExecutor: MeetingSkillExecutor = {
+    execute: async ({ commandType }) => {
+      calls.push(commandType);
+      return {
+        status: 'succeeded',
+        output: `${commandType} done`,
+      };
+    },
+  };
+
+  const module = createMeetingModule({ calendarClient, skillExecutor });
+
+  const atFiveMinutesBefore = await module.joinScheduledMeeting(eventStartMs - 5 * 60 * 1000);
+  const atOneMinuteAfter = await module.joinScheduledMeeting(eventStartMs + 1 * 60 * 1000);
+
+  assert.equal(atFiveMinutesBefore.status, 'succeeded');
+  assert.equal(atOneMinuteAfter.status, 'succeeded');
+  assert.deepEqual(calls, [
+    'meeting.join.now',
+    'meeting.share_screen.start',
+    'meeting.join.now',
+    'meeting.share_screen.start',
+  ]);
+});

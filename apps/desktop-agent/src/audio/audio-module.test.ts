@@ -76,6 +76,40 @@ test('maybeRespond only responds after wake word and exits conversation after 20
   assert.deepEqual(spoken, ['秘書 今日の予定は？', '続けて教えて']);
 });
 
+
+
+test('maybeRespond replies within 2 seconds after wake word activation', async () => {
+  const rawDir = mkdtempSync(join(tmpdir(), 'ai-secretary-audio-'));
+  let now = 1_000;
+  const spoken: string[] = [];
+
+  const module = createAudioModule({
+    sttClient: { transcribe: async () => ({ text: '' }) },
+    ttsClient: {
+      synthesize: async ({ text }) => ({
+        pcm16le: new TextEncoder().encode(text),
+      }),
+    },
+    virtualMicOutput: {
+      play: async ({ pcm16le }) => {
+        spoken.push(new TextDecoder().decode(pcm16le));
+      },
+    },
+    rawAudioDir: rawDir,
+    nowMs: () => now,
+  });
+
+  const wake = await module.maybeRespond({ text: '秘書 テスト開始' });
+  assert.equal(wake.responded, true);
+
+  now += 1_999;
+  const followup = await module.maybeRespond({ text: '続きの案内をお願いします' });
+
+  assert.equal(followup.responded, true);
+  assert.equal(followup.mode, 'conversation');
+  assert.deepEqual(spoken, ['秘書 テスト開始', '続きの案内をお願いします']);
+});
+
 test('saveRawAudio and cleanupExpiredRawAudio delete files older than 5 minutes', () => {
   const rawDir = mkdtempSync(join(tmpdir(), 'ai-secretary-audio-'));
   const now = Date.UTC(2026, 0, 1, 0, 10, 0);

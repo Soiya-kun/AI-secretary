@@ -174,10 +174,10 @@
 - [ ] 長時間タスクの中間状態チェックポイントを実装
 
 ### B6. セットアップ/運用導線整備
-- [ ] README に Claude/Codex/Gemini CLI の導入・認証手順を追加
-- [ ] README に supervisor/worker 疎通確認手順を追加
-- [ ] README に remote command E2E疎通手順を追加
-- [ ] 運用障害時の復旧Runbook（supervisor/worker別）を追加
+- [x] README に Claude/Codex/Gemini CLI の導入・認証手順を追加
+- [x] README に supervisor/worker 疎通確認手順を追加
+- [x] README に remote command E2E疎通手順を追加
+- [x] 運用障害時の復旧Runbook（supervisor/worker別）を追加
 
 ### B7. 受け入れテスト（新要件）
 - [ ] supervisor 常駐起動テスト（60秒以内running）

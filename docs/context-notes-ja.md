@@ -56,3 +56,8 @@
 
 - Claude主軸方針に合わせ、worker起動要求は `supervisor=claude` を含む起動リクエストへ正規化する。
 - Codex/Gemini は Desktop 側で worker pool により同時実行上限を 2 に固定し、過負荷時はキュー待ちさせる。
+
+## 9. 追加判断メモ（運用導線）
+
+- 導入・障害復旧の情報分散を避けるため、CLI認証手順 / 疎通確認 / E2E確認 / 復旧手順は README に集約する。
+- 復旧手順は supervisor 系と worker 系で分離し、一次切り分け時間を短縮する方針とする。

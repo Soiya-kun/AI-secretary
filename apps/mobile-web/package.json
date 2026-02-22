@@ -2,9 +2,13 @@
   "name": "@ai-secretary/mobile-web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "echo 'mobile-web build placeholder'",
-    "typecheck": "echo 'mobile-web typecheck placeholder'",
-    "lint": "echo 'mobile-web lint placeholder'"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10"
   }
 }

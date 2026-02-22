@@ -3,9 +3,6 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-const commandTableName = process.env.COMMAND_TABLE_NAME ?? '';
-const stateTableName = process.env.STATE_TABLE_NAME ?? '';
-
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 type CommandStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
@@ -22,13 +19,33 @@ type CommandRecord = {
   status: CommandStatus;
   created_at: string;
   updated_at: string;
+  audit_id: string;
 };
 
-const json = (statusCode: number, body: Record<string, unknown>): APIGatewayProxyResult => ({
+const json = (
+  statusCode: number,
+  body: Record<string, unknown>,
+  auditId?: string
+): APIGatewayProxyResult => ({
   statusCode,
-  headers: { 'content-type': 'application/json' },
+  headers: {
+    'content-type': 'application/json',
+    ...(auditId ? { 'x-audit-id': auditId } : {})
+  },
   body: JSON.stringify(body)
 });
+
+
+const getAuditId = (event: APIGatewayProxyEvent): string =>
+  event.headers['x-audit-id'] ?? event.headers['X-Audit-Id'] ?? randomUUID();
+
+const hasAuthenticatedPrincipal = (event: APIGatewayProxyEvent): boolean => {
+  const authorizer = event.requestContext.authorizer;
+  const jwtClaims = (authorizer as { jwt?: { claims?: Record<string, unknown> } } | undefined)?.jwt?.claims;
+  const cognitoClaims = (authorizer as { claims?: Record<string, unknown> } | undefined)?.claims;
+
+  return Boolean((jwtClaims && Object.keys(jwtClaims).length > 0) || (cognitoClaims && Object.keys(cognitoClaims).length > 0));
+};
 
 export const validateCreateCommand = (body: string | null): CreateCommandRequest => {
   if (!body) {
@@ -50,8 +67,16 @@ export const validateCreateCommand = (body: string | null): CreateCommandRequest
 };
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  const auditId = getAuditId(event);
+  const commandTableName = process.env.COMMAND_TABLE_NAME ?? '';
+  const stateTableName = process.env.STATE_TABLE_NAME ?? '';
+
   if (!commandTableName || !stateTableName) {
-    return json(500, { message: 'table names are not configured' });
+    return json(500, { message: 'table names are not configured' }, auditId);
+  }
+
+  if (!hasAuthenticatedPrincipal(event)) {
+    return json(401, { message: 'authentication is required', auditId }, auditId);
   }
 
   try {
@@ -65,7 +90,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         payload: request.payload,
         status: 'queued',
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        audit_id: auditId
       };
 
       await ddb.send(
@@ -82,18 +108,19 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           Item: {
             command_id: commandId,
             updated_at: now,
-            status: item.status
+            status: item.status,
+            audit_id: auditId
           }
         })
       );
 
-      return json(201, { commandId, status: item.status });
+      return json(201, { commandId, status: item.status, auditId }, auditId);
     }
 
     if (event.httpMethod === 'GET' && event.resource === '/v1/commands/{id}') {
       const commandId = event.pathParameters?.id;
       if (!commandId) {
-        return json(400, { message: 'id is required' });
+        return json(400, { message: 'id is required', auditId }, auditId);
       }
 
       const result = await ddb.send(
@@ -104,16 +131,16 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       );
 
       if (!result.Item) {
-        return json(404, { message: 'command not found' });
+        return json(404, { message: 'command not found', auditId }, auditId);
       }
 
-      return json(200, { command: result.Item });
+      return json(200, { command: result.Item, auditId }, auditId);
     }
 
     if (event.httpMethod === 'POST' && event.resource === '/v1/commands/{id}/cancel') {
       const commandId = event.pathParameters?.id;
       if (!commandId) {
-        return json(400, { message: 'id is required' });
+        return json(400, { message: 'id is required', auditId }, auditId);
       }
 
       const now = new Date().toISOString();
@@ -140,25 +167,26 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           Item: {
             command_id: commandId,
             updated_at: now,
-            status: 'cancelled'
+            status: 'cancelled',
+            audit_id: auditId
           }
         })
       );
 
-      return json(200, { command: updateResult.Attributes });
+      return json(200, { command: updateResult.Attributes, auditId }, auditId);
     }
 
-    return json(404, { message: 'route not found' });
+    return json(404, { message: 'route not found', auditId }, auditId);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
     if (message.includes('ConditionalCheckFailedException')) {
-      return json(409, { message: 'command cannot transition to cancelled' });
+      return json(409, { message: 'command cannot transition to cancelled', auditId }, auditId);
     }
 
     if (message.includes('Unexpected token') || message.includes('is required')) {
-      return json(400, { message });
+      return json(400, { message, auditId }, auditId);
     }
 
-    return json(500, { message });
+    return json(500, { message, auditId }, auditId);
   }
 };

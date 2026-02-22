@@ -96,20 +96,20 @@
 
 ## 8. Mobile Web UI
 
-- [ ] Cognitoログイン画面を実装
-- [ ] コマンド入力フォームを実装
-- [ ] commandType選択（5種）を実装
-- [ ] command送信処理を実装
-- [ ] ステータス表示（queued/running/succeeded/failed）を実装
-- [ ] 単一ロール（全コマンド許可）を実装
-- [ ] `devtask.submit` 専用入力UIを実装
+- [x] Cognitoログイン画面を実装
+- [x] コマンド入力フォームを実装
+- [x] commandType選択（5種）を実装
+- [x] command送信処理を実装
+- [x] ステータス表示（queued/running/succeeded/failed）を実装
+- [x] 単一ロール（全コマンド許可）を実装
+- [x] `devtask.submit` 専用入力UIを実装
 
 ## 9. 監査・運用
 
-- [ ] 全コマンドに監査ID付与を実装
+- [x] 全コマンドに監査ID付与を実装
 - [ ] 監査ログ必須書き込みを実装
 - [ ] YOLOモード（確認ダイアログなし）を実装
-- [ ] 認証なしAPI拒否を実装
+- [x] 認証なしAPI拒否を実装
 - [ ] 監査ログ欠損率0%の検証を実装
 
 ## 10. E2E受け入れテスト

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Secretary Mobile Web</title>
+    <style>
+      body { font-family: sans-serif; margin: 0; padding: 16px; }
+      main { max-width: 680px; margin: 0 auto; }
+      form { display: flex; flex-direction: column; gap: 10px; }
+      textarea, input, select, button { font-size: 16px; padding: 8px; }
+      fieldset { border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      window.__AI_SECRETARY_CONFIG__ = {
+        apiBaseUrl: 'http://localhost:3000',
+        cognitoDomain: 'https://example.auth.ap-northeast-1.amazoncognito.com',
+        cognitoClientId: 'replace-me',
+        cognitoRedirectUri: window.location.origin,
+        cognitoScope: 'openid profile email'
+      };
+    </script>
+    <script type="module" src="./dist/main.js"></script>
+  </body>
+</html>

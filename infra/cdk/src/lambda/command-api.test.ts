@@ -6,12 +6,12 @@ test('validateCreateCommand parses valid payload', () => {
   const request = validateCreateCommand(
     JSON.stringify({
       commandType: 'devtask.submit',
-      payload: { title: 'Add tests' }
-    })
+      payload: { repository: 'owner/repo', task: 'Add tests' },
+    }),
   );
 
   assert.equal(request.commandType, 'devtask.submit');
-  assert.deepEqual(request.payload, { title: 'Add tests' });
+  assert.deepEqual(request.payload, { repository: 'owner/repo', task: 'Add tests' });
 });
 
 test('validateCreateCommand rejects missing body', () => {
@@ -21,10 +21,9 @@ test('validateCreateCommand rejects missing body', () => {
 test('validateCreateCommand rejects missing commandType', () => {
   assert.throws(
     () => validateCreateCommand(JSON.stringify({ payload: { title: 'x' } })),
-    /commandType is required/
+    /commandType is required/,
   );
 });
-
 
 test('validateCreateCommand rejects unsupported commandType', () => {
   assert.throws(
@@ -32,10 +31,10 @@ test('validateCreateCommand rejects unsupported commandType', () => {
       validateCreateCommand(
         JSON.stringify({
           commandType: 'assistant.ask',
-          payload: { title: 'x' }
-        })
+          payload: { title: 'x' },
+        }),
       ),
-    /commandType is unsupported/
+    /commandType is unsupported/,
   );
 });
 
@@ -45,10 +44,36 @@ test('validateCreateCommand rejects non-object payload', () => {
       validateCreateCommand(
         JSON.stringify({
           commandType: 'devtask.submit',
-          payload: ['invalid']
-        })
+          payload: ['invalid'],
+        }),
       ),
-    /payload is required/
+    /payload is required/,
+  );
+});
+
+test('validateCreateCommand rejects missing command payload schema', () => {
+  assert.throws(
+    () =>
+      validateCreateCommand(
+        JSON.stringify({
+          commandType: 'meeting.join.now',
+          payload: { source: 'calendar' },
+        }),
+      ),
+    /payload.url is required/,
+  );
+});
+
+test('validateCreateCommand rejects forbidden alias payload keys', () => {
+  assert.throws(
+    () =>
+      validateCreateCommand(
+        JSON.stringify({
+          commandType: 'devtask.submit',
+          payload: { repo: 'owner/repo', task: 'x', repository: 'owner/repo' },
+        }),
+      ),
+    /payload.repo is forbidden/,
   );
 });
 
@@ -62,7 +87,7 @@ test('handler rejects unauthenticated requests', async () => {
     body: null,
     headers: {},
     pathParameters: { id: 'cmd-1' },
-    requestContext: {}
+    requestContext: {},
   } as never);
 
   assert.equal(response.statusCode, 401);

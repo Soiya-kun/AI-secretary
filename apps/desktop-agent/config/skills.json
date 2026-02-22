@@ -2,57 +2,87 @@
   "skills": [
     {
       "name": "join_meet",
+      "owner": "meeting-team",
       "commandType": "meeting.join.now",
       "runner": "claude",
       "command": "echo",
       "args": [
         "join_meet executed"
-      ]
+      ],
+      "timeoutSec": 10,
+      "retryPolicy": {
+        "maxAttempts": 2
+      }
     },
     {
       "name": "share_screen_meet",
+      "owner": "meeting-team",
       "commandType": "meeting.share_screen.start",
       "runner": "claude",
       "command": "echo",
       "args": [
         "share_screen_meet executed"
-      ]
+      ],
+      "timeoutSec": 10,
+      "retryPolicy": {
+        "maxAttempts": 2
+      }
     },
     {
       "name": "devtask_submit",
+      "owner": "dev-productivity",
       "commandType": "devtask.submit",
       "runner": "codex",
       "command": "echo",
       "args": [
         "devtask.submit executed"
-      ]
+      ],
+      "timeoutSec": 60,
+      "retryPolicy": {
+        "maxAttempts": 3
+      }
     },
     {
       "name": "assistant_ask",
+      "owner": "assistant-core",
       "commandType": "assistant.ask",
       "runner": "gemini",
       "command": "echo",
       "args": [
         "assistant.ask executed"
-      ]
+      ],
+      "timeoutSec": 30,
+      "retryPolicy": {
+        "maxAttempts": 1
+      }
     },
     {
       "name": "note_capture",
+      "owner": "notes-team",
       "commandType": "note.capture",
       "runner": "claude",
       "command": "echo",
       "args": [
         "note.capture executed"
-      ]
+      ],
+      "timeoutSec": 20,
+      "retryPolicy": {
+        "maxAttempts": 2
+      }
     },
     {
       "name": "note_repo_detect",
+      "owner": "notes-team",
       "commandType": "note.repo.detect",
       "runner": "claude",
       "command": "echo",
       "args": [
         "repo:unknown/unknown"
-      ]
+      ],
+      "timeoutSec": 5,
+      "retryPolicy": {
+        "maxAttempts": 1
+      }
     }
   ]
 }

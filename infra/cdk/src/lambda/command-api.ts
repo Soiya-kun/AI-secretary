@@ -13,12 +13,16 @@ type CreateCommandRequest = {
 };
 
 const allowedCommandTypes = new Set([
-  'join_meet',
-  'share_screen_meet',
+  'meeting.join.now',
+  'meeting.share_screen.start',
   'note.capture',
   'note.export',
-  'devtask.submit'
+  'devtask.submit',
 ]);
+
+const forbiddenPayloadAliases: Record<string, string[]> = {
+  'devtask.submit': ['repo'],
+};
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -36,16 +40,15 @@ type CommandRecord = {
 const json = (
   statusCode: number,
   body: Record<string, unknown>,
-  auditId?: string
+  auditId?: string,
 ): APIGatewayProxyResult => ({
   statusCode,
   headers: {
     'content-type': 'application/json',
-    ...(auditId ? { 'x-audit-id': auditId } : {})
+    ...(auditId ? { 'x-audit-id': auditId } : {}),
   },
-  body: JSON.stringify(body)
+  body: JSON.stringify(body),
 });
-
 
 const getAuditId = (event: APIGatewayProxyEvent): string =>
   event.headers['x-audit-id'] ?? event.headers['X-Audit-Id'] ?? randomUUID();
@@ -57,6 +60,58 @@ const hasAuthenticatedPrincipal = (event: APIGatewayProxyEvent): boolean => {
 
   return Boolean((jwtClaims && Object.keys(jwtClaims).length > 0) || (cognitoClaims && Object.keys(cognitoClaims).length > 0));
 };
+
+function validatePayloadSchema(commandType: string, payload: Record<string, unknown>): void {
+  if (commandType === 'meeting.join.now') {
+    if (typeof payload.url !== 'string' || payload.url.length === 0) {
+      throw new Error('payload.url is required');
+    }
+
+    return;
+  }
+
+  if (commandType === 'meeting.share_screen.start') {
+    if (typeof payload.source !== 'string' || payload.source.length === 0) {
+      throw new Error('payload.source is required');
+    }
+
+    return;
+  }
+
+  if (commandType === 'note.capture') {
+    if (typeof payload.content !== 'string' || payload.content.length === 0) {
+      throw new Error('payload.content is required');
+    }
+
+    return;
+  }
+
+  if (commandType === 'note.export') {
+    if (typeof payload.repo !== 'string' || payload.repo.length === 0) {
+      throw new Error('payload.repo is required');
+    }
+
+    return;
+  }
+
+  if (commandType === 'devtask.submit') {
+    if (typeof payload.repository !== 'string' || payload.repository.length === 0) {
+      throw new Error('payload.repository is required');
+    }
+    if (typeof payload.task !== 'string' || payload.task.length === 0) {
+      throw new Error('payload.task is required');
+    }
+  }
+}
+
+function validateForbiddenAliases(commandType: string, payload: Record<string, unknown>): void {
+  const aliases = forbiddenPayloadAliases[commandType] ?? [];
+  for (const alias of aliases) {
+    if (alias in payload) {
+      throw new Error(`payload.${alias} is forbidden; use canonical keys only`);
+    }
+  }
+}
 
 export const validateCreateCommand = (body: string | null): CreateCommandRequest => {
   if (!body) {
@@ -74,9 +129,12 @@ export const validateCreateCommand = (body: string | null): CreateCommandRequest
     throw new Error('payload is required');
   }
 
+  validateForbiddenAliases(parsed.commandType, parsed.payload);
+  validatePayloadSchema(parsed.commandType, parsed.payload);
+
   return {
     commandType: parsed.commandType,
-    payload: parsed.payload as Record<string, unknown>
+    payload: parsed.payload as Record<string, unknown>,
   };
 };
 
@@ -105,15 +163,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         status: 'queued',
         created_at: now,
         updated_at: now,
-        audit_id: auditId
+        audit_id: auditId,
       };
 
       await ddb.send(
         new PutCommand({
           TableName: commandTableName,
           Item: item,
-          ConditionExpression: 'attribute_not_exists(command_id)'
-        })
+          ConditionExpression: 'attribute_not_exists(command_id)',
+        }),
       );
 
       await ddb.send(
@@ -123,9 +181,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             command_id: commandId,
             updated_at: now,
             status: item.status,
-            audit_id: auditId
-          }
-        })
+            audit_id: auditId,
+          },
+        }),
       );
 
       return json(201, { commandId, status: item.status, auditId }, auditId);
@@ -140,8 +198,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       const result = await ddb.send(
         new GetCommand({
           TableName: commandTableName,
-          Key: { command_id: commandId }
-        })
+          Key: { command_id: commandId },
+        }),
       );
 
       if (!result.Item) {
@@ -169,10 +227,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             ':cancelled': 'cancelled',
             ':queued': 'queued',
             ':running': 'running',
-            ':updatedAt': now
+            ':updatedAt': now,
           },
-          ReturnValues: 'ALL_NEW'
-        })
+          ReturnValues: 'ALL_NEW',
+        }),
       );
 
       await ddb.send(
@@ -182,29 +240,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             command_id: commandId,
             updated_at: now,
             status: 'cancelled',
-            audit_id: auditId
-          }
-        })
+            audit_id: auditId,
+          },
+        }),
       );
 
       return json(200, { command: updateResult.Attributes, auditId }, auditId);
     }
 
-    return json(404, { message: 'route not found', auditId }, auditId);
+    return json(404, { message: 'not found', auditId }, auditId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown error';
-    if (message.includes('ConditionalCheckFailedException')) {
-      return json(409, { message: 'command cannot transition to cancelled', auditId }, auditId);
-    }
-
+    const message = error instanceof Error ? error.message : 'internal server error';
     if (
-      message.includes('Unexpected token') ||
       message.includes('is required') ||
-      message.includes('is unsupported')
+      message.includes('unsupported') ||
+      message.includes('forbidden')
     ) {
       return json(400, { message, auditId }, auditId);
     }
 
-    return json(500, { message, auditId }, auditId);
+    return json(500, { message: 'internal server error', auditId }, auditId);
   }
 };

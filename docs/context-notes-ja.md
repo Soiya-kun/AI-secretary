@@ -51,3 +51,8 @@
 
 - `claude supervisor` は Desktop 側で単一常駐プロセスとして扱い、異常終了時は自動再起動で継続性を担保する。
 - 連続失敗時は通常タスク実行より可観測性を優先し、`agent.degraded` として監査ログへ記録する。
+
+## 8. 追加判断メモ（Worker並列制御）
+
+- Claude主軸方針に合わせ、worker起動要求は `supervisor=claude` を含む起動リクエストへ正規化する。
+- Codex/Gemini は Desktop 側で worker pool により同時実行上限を 2 に固定し、過負荷時はキュー待ちさせる。

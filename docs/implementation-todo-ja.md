@@ -148,9 +148,9 @@
 - [x] 連続3回失敗時の `agent.degraded` 通知を実装
 
 ### B2. Workerオーケストレーション（Codex/Gemini）
-- [ ] Claude指示による worker 起動プロトコルを実装
-- [ ] Codex worker プール（最大2並列）を実装
-- [ ] Gemini worker プール（最大2並列）を実装
+- [x] Claude指示による worker 起動プロトコルを実装
+- [x] Codex worker プール（最大2並列）を実装
+- [x] Gemini worker プール（最大2並列）を実装
 - [x] worker 実行結果（exit_code/stdout/stderr/artifacts）標準化を実装
 - [ ] 必要時に独立ウィンドウで起動するオプションを実装
 

@@ -5,6 +5,17 @@ import { createAgentRuntime } from './runtime/agent-runtime.js';
 import { createNotesModule } from './notes/notes-module.js';
 import { createSkillRuntime } from './runtime/skill-runtime.js';
 
+type GitSyncMode = 'direct' | 'pr' | 'hold';
+
+function resolveGitSyncMode(payload: Record<string, unknown>): GitSyncMode {
+  const mode = payload.gitSyncMode;
+  if (mode === 'direct' || mode === 'pr' || mode === 'hold') {
+    return mode;
+  }
+
+  return 'direct';
+}
+
 function createTray(appName: string): Tray {
   const tray = new Tray(process.execPath);
   tray.setToolTip(appName);
@@ -56,11 +67,13 @@ async function bootstrap(): Promise<void> {
             fileName: `note-${job.id}`,
           });
         } else {
+          const gitSyncMode = resolveGitSyncMode(job.payload);
           try {
-            const exportResult = notesModule.commitAndPushNote({
+            const exportResult = notesModule.syncNoteToGit({
               repo,
               markdown,
               fileName: `note-${job.id}`,
+              mode: gitSyncMode,
             });
 
             database.insertGitExport({
@@ -68,9 +81,26 @@ async function bootstrap(): Promise<void> {
               repo: exportResult.repo,
               branch: exportResult.branch,
               commitHash: exportResult.commitHash,
-              exportStatus: 'succeeded',
+              exportStatus: exportResult.status,
             });
-          } catch {
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const body = [
+              `command_id: ${job.id}`,
+              `repo: ${repo}`,
+              `reason: ${errorMessage}`,
+            ].join('\n');
+
+            try {
+              notesModule.sendGitSyncFailureEmail({
+                to: config.gitSyncFailureEmailTo,
+                subject: `[AI Secretary] Git同期失敗 (${job.id})`,
+                body,
+              });
+            } catch {
+              // メール送信失敗時も処理を継続し、失敗状態だけは確実に保存する。
+            }
+
             database.insertGitExport({
               commandId: job.id,
               repo,

@@ -19,7 +19,7 @@ export interface AgentDatabase {
     repo: string;
     branch: string;
     commitHash?: string;
-    exportStatus: 'succeeded' | 'failed';
+    exportStatus: 'succeeded' | 'failed' | 'pending';
   }) => void;
 }
 

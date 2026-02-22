@@ -7,6 +7,7 @@ export interface AgentConfig {
   skillManifestPath: string;
   notesRootPath: string;
   startInTray: boolean;
+  gitSyncFailureEmailTo: string;
 }
 
 const DEFAULT_CONFIG_PATH = './config/local.json';
@@ -28,5 +29,6 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
     skillManifestPath: parsed.skillManifestPath,
     notesRootPath: parsed.notesRootPath ?? './apps/desktop-agent/data',
     startInTray: parsed.startInTray ?? false,
+    gitSyncFailureEmailTo: parsed.gitSyncFailureEmailTo ?? 'ops@example.com',
   };
 }

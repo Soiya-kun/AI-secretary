@@ -5,6 +5,7 @@ export interface AgentConfig {
   sqlitePath: string;
   appName: string;
   skillManifestPath: string;
+  startInTray: boolean;
 }
 
 const DEFAULT_CONFIG_PATH = './config/local.json';
@@ -15,12 +16,15 @@ export function loadAgentConfig(configPath = process.env.DESKTOP_CONFIG_PATH ?? 
   const parsed = JSON.parse(raw) as Partial<AgentConfig>;
 
   if (!parsed.sqlitePath || !parsed.appName || !parsed.skillManifestPath) {
-    throw new Error(`Invalid config: sqlitePath, appName and skillManifestPath are required (${absolutePath})`);
+    throw new Error(
+      `Invalid config: sqlitePath, appName and skillManifestPath are required (${absolutePath})`,
+    );
   }
 
   return {
     sqlitePath: parsed.sqlitePath,
     appName: parsed.appName,
     skillManifestPath: parsed.skillManifestPath,
+    startInTray: parsed.startInTray ?? false,
   };
 }

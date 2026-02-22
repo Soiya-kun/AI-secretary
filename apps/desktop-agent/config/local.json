@@ -3,5 +3,6 @@
   "sqlitePath": "./apps/desktop-agent/data/agent.db",
   "skillManifestPath": "./apps/desktop-agent/config/skills.json",
   "startInTray": true,
-  "notesRootPath": "./apps/desktop-agent/data"
+  "notesRootPath": "./apps/desktop-agent/data",
+  "gitSyncFailureEmailTo": "ops@example.com"
 }

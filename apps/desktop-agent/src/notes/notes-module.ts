@@ -28,12 +28,19 @@ export interface NotesModule {
   generateMarkdown: (input: MeetingNoteInput) => string;
   saveUnknownRepoNote: (input: { markdown: string; fileName: string }) => string;
   ensureDevtaskDirectory: (repo: string) => string;
-  commitAndPushNote: (input: { repo: string; markdown: string; fileName: string }) => {
+  syncNoteToGit: (input: {
+    repo: string;
+    markdown: string;
+    fileName: string;
+    mode: 'direct' | 'pr' | 'hold';
+  }) => {
     repo: string;
     branch: string;
-    commitHash: string;
+    commitHash?: string;
+    status: 'succeeded' | 'pending';
     directory: string;
   };
+  sendGitSyncFailureEmail: (input: { to: string; subject: string; body: string }) => void;
 }
 
 function normalizeRepo(repo: string): string {
@@ -91,7 +98,12 @@ export function createNotesModule(notesRootPath: string): NotesModule {
     return targetDir;
   };
 
-  const commitAndPushNote = (input: { repo: string; markdown: string; fileName: string }) => {
+  const syncNoteToGit = (input: {
+    repo: string;
+    markdown: string;
+    fileName: string;
+    mode: 'direct' | 'pr' | 'hold';
+  }) => {
     const normalizedRepo = normalizeRepo(input.repo);
     const repoDir = ensureDevtaskDirectory(normalizedRepo);
 
@@ -104,15 +116,50 @@ export function createNotesModule(notesRootPath: string): NotesModule {
     runGitCommand(['commit', '-m', commitMessage], repoDir);
 
     const branch = runGitCommand(['rev-parse', '--abbrev-ref', 'HEAD'], repoDir);
-    runGitCommand(['push', 'origin', branch], repoDir);
     const commitHash = runGitCommand(['rev-parse', 'HEAD'], repoDir);
+
+    if (input.mode === 'direct') {
+      runGitCommand(['push', 'origin', branch], repoDir);
+      return {
+        repo: normalizedRepo,
+        branch,
+        commitHash,
+        status: 'succeeded' as const,
+        directory: repoDir,
+      };
+    }
+
+    if (input.mode === 'pr') {
+      return {
+        repo: normalizedRepo,
+        branch,
+        commitHash,
+        status: 'pending' as const,
+        directory: repoDir,
+      };
+    }
 
     return {
       repo: normalizedRepo,
       branch,
-      commitHash,
+      status: 'pending' as const,
       directory: repoDir,
     };
+  };
+
+  const sendGitSyncFailureEmail = (input: { to: string; subject: string; body: string }) => {
+    const result = spawnSync(
+      'sendmail',
+      [input.to],
+      {
+        input: `Subject: ${input.subject}\n\n${input.body}`,
+        encoding: 'utf-8',
+      },
+    );
+
+    if (result.status !== 0) {
+      throw new Error(result.stderr.trim() || 'sendmail failed');
+    }
   };
 
   return {
@@ -120,6 +167,7 @@ export function createNotesModule(notesRootPath: string): NotesModule {
     generateMarkdown,
     saveUnknownRepoNote,
     ensureDevtaskDirectory,
-    commitAndPushNote,
+    syncNoteToGit,
+    sendGitSyncFailureEmail,
   };
 }
